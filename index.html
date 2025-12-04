@@ -371,13 +371,12 @@ if ('serviceWorker' in navigator) {
         // --- YENİ: Ses Efekti Tanımlamaları ---
         // LÜTFEN BU YOLLARI KENDİ SES DOSYALARINIZIN GERÇEK YOLLARIYLA DEĞİŞTİRİN!
         const hoverSound = new Audio('assets/sounds/hover.mp3'); 
-        const clickSound = new Audio('assets/sounds/click.mp3');
-        const clickSound = new Audio('assets/sounds/menu.mp3');
+        const clickSound = new Audio('assets/sounds/click.mp3');    
         
         // Seslerin ses seviyesini ayarlayabilirsiniz (0.0'dan 1.0'a)
         hoverSound.volume = 0.5; 
         clickSound.volume = 0.7;
-        menuSound.colume = 0.5;
+       
         // Üzerine Gelme Sesi
         function playHoverSound() {
             // Sesin hızlı çalınabilmesi için mevcut sesi durdurup sıfırdan başlat
@@ -398,12 +397,6 @@ if ('serviceWorker' in navigator) {
         }
         window.playClickSound = playClickSound;
 
-        // Tıklama Sesi
-        function playMenuSound() {
-            menuSound.currentTime = 0; 
-            menuSound.play().catch(e => console.error("Menu sesi çalınamadı:", e));
-        }
-        window.playMenuSound = playMenuSound;
         
         // --- 1. Three.js Setup (Aynı) ---
         const scene = new THREE.Scene();
@@ -1631,6 +1624,7 @@ if ('serviceWorker' in navigator) {
 </body>
 
 </html>
+
 
 
 
