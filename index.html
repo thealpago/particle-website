@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js');
+    });
+}
+</script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Mouse Particles - Dyson Sphere Edition (Hand Control Added)</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <style>
+        body { 
+            margin: 0;
+            overflow: hidden; 
+            background-color: #020202; 
+            font-family: 'Segoe UI', sans-serif; 
+            touch-action: none;
+        }
+
+        canvas { 
+            display: block;
+        }
+        
+        /* Başlangıçta Gizlenecek Paneller */
+        .initially-hidden {
+            display: none !important; 
+        }
+
+        /* Başlatma Butonu Konteyneri */
+        #start-button-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            background-color: #020202; 
+            transition: opacity 0.5s ease;
+        }
+
+        /* Başlatma Butonu (PNG'nizin Stilleri) */
+        #start-button-png {
+            width: 150px; 
+            height: auto;
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease; 
+            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.5)); 
+        }
+
+        #start-button-png:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.8));
+        }
+        
+        #start-button-png:active {
+            transform: scale(0.98);
+            filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.3));
+        }
+        
+        /* Önceki Geri Dönüş Butonu Style (.return-button) kaldırıldı. Artık ikon kullanılıyor. */
+
+        /* Partikül Rengi (Color) Paneli */
+        #color-picker-panel {
+            position: absolute;
+            bottom: 80px; 
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px;
+            width: 113px; 
+            background: linear-gradient(135deg, rgba(20, 20, 20, 0.2), rgba(10, 10, 10, 0.2));
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 210, 255, 0.3); 
+            color: white;
+            z-index: 10;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.7);
+            user-select: none;
+            text-align: center;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        
+        /* Renk Paneli Gizleme Sınıfı */
+        #color-picker-panel.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-50%) translateY(10px);
+        }
+
+        #color-picker-panel label {
+            display: block;
+            font-size: 0.8rem; 
+            margin-bottom: 6px; 
+            color: #00d2ff;
+            font-weight: 600;
+        }
+
+        /* YENİ: Ayarlar Paneli */
+        #settings-panel {
+            position: absolute;
+            bottom: 80px; 
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px;
+            width: 250px; 
+            background: linear-gradient(135deg, rgba(20, 20, 20, 0.2), rgba(10, 10, 10, 0.2));
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 210, 255, 0.3); 
+            color: white;
+            z-index: 10;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.7);
+            user-select: none;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        
+        #settings-panel.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-50%) translateY(10px);
+        }
+
+        .setting-group {
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed rgba(0, 210, 255, 0.1);
+        }
+
+        .setting-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        #settings-panel label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem; 
+            margin-bottom: 4px; 
+            color: #00d2ff;
+            font-weight: 600;
+        }
+        
+        #settings-panel input[type="range"],
+        #settings-panel input[type="number"] {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+        }
+        
+        #settings-panel input[type="number"] {
+            width: 60px;
+            padding: 3px;
+            text-align: right;
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .value-display {
+            font-size: 0.75rem;
+            color: #fff;
+            font-weight: 400;
+        }
+
+
+        /* Şablon Butonları Paneli (Ekranın Altı) */
+        #template-buttons {
+            position: absolute;
+            bottom: 18px; 
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex; 
+            gap: 6px; 
+            padding: 7px 12px; 
+            background: rgba(10, 10, 10, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 18px; 
+            border: 1px solid rgba(0, 210, 255, 0.2);
+            z-index: 10;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Yeni Bubble Buton Stilleri (Aynı) */
+        .template-btn {
+            position: relative;
+            width: 43.125px; 
+            height: 43.125px;
+            padding: 0;
+            font-size: 0.5rem; 
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            overflow: hidden;
+            outline: none; 
+            user-select: none;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 210, 255, 0.1), rgba(10, 10, 10, 0.2));
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+            text-align: center;
+            line-height: 1.1; 
+            text-shadow: 0 0 5px #000;
+            border: 2px solid rgba(0, 210, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .template-btn.icon-btn {
+            font-size: 1.2rem;
+        }
+
+        .template-btn:active, .template-btn:focus {
+            outline: none;
+            transform: scale(0.95); 
+            box-shadow: 
+                0 0 5px rgba(0, 0, 0, 0.9), 
+                0 0 10px rgba(0, 210, 255, 0.8), 
+                inset 0 0 10px rgba(0, 255, 255, 0.7);
+        }
+
+        .template-btn:hover {
+            transform: scale(1.1) translateY(-1px);
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.8), 0 0 5px rgba(0, 0, 0, 0.9);
+            border-color: #00ffff;
+            color: #fff;
+        }
+        
+        .template-btn.active {
+            transform: scale(1.0);
+            box-shadow: 
+                0 0 30px rgba(0, 210, 255, 1), 
+                0 0 10px rgba(0, 210, 255, 0.7),
+                inset 0 0 10px rgba(0, 255, 255, 0.7);
+            border-color: #00ffff;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 210, 255, 0.2), rgba(0, 150, 200, 0.2));
+            color: #ccc;
+            text-shadow: 0 0 5px #000;
+        }
+        
+        /* YENİ: Kamera Kontrol Butonu Aktif/Pasif Durumu */
+        #btn-toggle-camera.active {
+            border-color: #00ff88;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 1), inset 0 0 10px rgba(0, 255, 136, 0.7);
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 25px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 6px; 
+            cursor: pointer;
+            background: transparent;
+            transition: all 0.2s;
+        }
+        input[type="color"]:hover {
+            border-color: #00d2ff;
+        }
+        
+        /* --- YENİ: Kamera Kontrol Komutları CSS'i --- */
+        /* Video hidden, used for processing */
+        #input_video { position: absolute; top: 0; left: 0; width: 0; height: 0; opacity: 0; }
+        
+        #loading {
+            position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; pointer-events: none; text-align: center;
+        }
+    </style>
+
+    <div id="start-button-container">
+        <img 
+            src="assets/icons/switchoff.png" 
+            id="start-button-png" 
+            onclick="startGame()"
+            alt="Başlatma Butonu"
+            title="Simülasyonu Başlat"
+        />
+    </div>
+
+    <div id="settings-panel" class="initially-hidden hidden">
+        
+
+        <div class="setting-group">
+            <label for="setting-mouse-sensitivity">
+                <span>Mouse Sensitivity</span>
+                <span id="mouse-sens-display" class="value-display">0.005</span>
+            </label>
+            <input type="range" id="setting-mouse-sensitivity" min="0.001" max="0.02" step="0.001" value="0.005">
+        </div>
+
+        <div class="setting-group">
+            <label for="setting-hand-sensitivity">
+                <span>Hand Sensitivity</span>
+                <span id="hand-sens-display" class="value-display">3.0</span>
+            </label>
+            <input type="range" id="setting-hand-sensitivity" min="0.5" max="10.0" step="0.5" value="3.0">
+        </div>
+        
+        
+    </div>
+    
+    <div id="color-picker-panel" class="initially-hidden">
+        <label for="colorPicker">Color</label>
+        <input type="color" id="colorPicker" value="#00d2ff">
+    </div>
+
+    <div id="template-buttons" class="initially-hidden">
+        
+        <button onclick="returnToStartScreen(); playClickSound();" id="btn-exit" class="template-btn icon-btn" title="Başlangıç Ekranına Dön" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
+            <i class="fas fa-undo"></i>
+        </button>
+        
+        <button onclick="toggleColorPanel(); playClickSound(none);" id="btn-toggle-color" class="template-btn icon-btn" title="Renk Ayarını Göster/Gizle" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
+            <i class="fas fa-palette"></i>
+        </button>
+        
+        <button onclick="toggleSettingsPanel(); playClickSound(none);" id="btn-toggle-settings" class="template-btn icon-btn" title="Simülasyon Ayarlarını Göster/Gizle" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
+            <i class="fas fa-sliders-h"></i>
+        </button>
+
+        <button onclick="toggleCameraControl(); playClickSound(none);" id="btn-toggle-camera" class="template-btn icon-btn" title="Kamera ile Kontrolü Aç/Kapat" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
+            <i class="fas fa-video"></i>
+        </button>
+        
+    
+        <button onclick="setShape('sphere'); playClickSound();" id="btn-sphere" class="template-btn active" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Sphere</button>
+        <button onclick="setShape('dysonsphere'); playClickSound();" id="btn-dysonsphere" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Dyson Sphere</button>
+        <button onclick="setShape('earth'); playClickSound();" id="btn-earth" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Earth</button>
+        <button onclick="setShape('atom'); playClickSound();" id="btn-atom" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Atom</button>
+        <button onclick="setShape('saturn'); playClickSound();" id="btn-saturnX" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">SaturnX</button>
+        <button onclick="setShape('dnahelix'); playClickSound();" id="btn-dnahelix" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">DNA</button> 
+        <button onclick="setShape('supernova'); playClickSound();" id="btn-supernova" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Supernova</button>
+        <button onclick="setShape('snowing'); playClickSound();" id="btn-snowing" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Snowing</button>
+        <button 
+        onclick="setShape('torus'); playClickSound();" id="btn-torus" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Torus</button>
+        <button 
+        onclick="setShape('1987A'); playClickSound();" id="btn-1987A" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">1987A</button>
+        </div>
+
+    <video id="input_video"></video>
+    <div id="loading" class="initially-hidden">Initializing Camera & AI...</div>
+
+    <script>
+    
+        // --- YENİ: Ses Efekti Tanımlamaları ---
+        // LÜTFEN BU YOLLARI KENDİ SES DOSYALARINIZIN GERÇEK YOLLARIYLA DEĞİŞTİRİN!
+        const hoverSound = new Audio('assets/sounds/hover.mp3'); 
+        const clickSound = new Audio('assets/sounds//click.mp3');
+        
+        // Seslerin ses seviyesini ayarlayabilirsiniz (0.0'dan 1.0'a)
+        hoverSound.volume = 0.5; 
+        clickSound.volume = 0.7;
+        
+        // Üzerine Gelme Sesi
+        function playHoverSound() {
+            // Sesin hızlı çalınabilmesi için mevcut sesi durdurup sıfırdan başlat
+            hoverSound.currentTime = 0; 
+            hoverSound.play().catch(e => console.error("Hover sesi çalınamadı:", e));
+        }
+        window.playHoverSound = playHoverSound;
+        
+        function stopHoverSound() {
+            // Fare butonun üzerinden ayrıldığında sesi durdurmaya gerek yok.
+        }
+        window.stopHoverSound = stopHoverSound;
+
+        // Tıklama Sesi
+        function playClickSound() {
+            clickSound.currentTime = 0; 
+            clickSound.play().catch(e => console.error("Click sesi çalınamadı:", e));
+        }
+        window.playClickSound = playClickSound;
+        
+        // --- 1. Three.js Setup (Aynı) ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x020202, 0.0015);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 35;
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.body.appendChild(renderer.domElement);
+
+        // --- 2. Particle System Variables ---
+        // YENİ/GÜNCEL: Değişkenler `let` olarak tanımlanmalı
+        let PARTICLE_COUNT = 120000;
+        let CONCENTRATION_SPEED = 0.025; // Morflama Hızı
+        let ROTATION_DAMPING = 0.95; // Dönüş Yavaşlama Hızı
+        let rotationSensitivity = 0.005; // Mouse Hassasiyeti
+        let handRotationSensitivity = 3.0; // El Kontrol Hassasiyeti
+        
+        let currentShape = 'sphere';
+        const particlesGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(PARTICLE_COUNT * 3);
+        const targetPositions = new Float32Array(PARTICLE_COUNT * 3);
+        // ✨ YENİ: Partikülün hangi yapıya ait olduğunu tutmak için.
+        const structureIndices = new Float32Array(PARTICLE_COUNT); 
+
+        const sizes = new Float32Array(PARTICLE_COUNT);
+
+        let isDragging = false;
+        let isRMBInteraction = false;
+        const explosionVelocities = new Float32Array(PARTICLE_COUNT * 3);
+        
+        let rotationXVelocity = 0;
+        let rotationYVelocity = 0;
+        
+
+        // --- YENİ: Kamera Kontrol Değişkenleri ---
+        let isHandDetected = false; 
+        let isSingleHand = false; // tek el durumu
+        let previousHandX = null;  // tek el için önceki x pozisyonu
+        let previousHandY = null;  // YENİ: tek el için önceki y pozisyonu
+        let targetScale = 1.0;
+        let currentScale = 1.0; 
+        let isCameraControlEnabled = false; // Başlangıçta pasif
+        let cam; // Camera nesnesini global olarak tanımlıyoruz
+        const handRotationDamping = 0.85; // tek el için damping
+
+        // --- YENİ: Şablon Kontrol Değişkenleri ---
+        const TEMPLATES = ['sphere', 'dysonsphere', 'earth', 'atom', 'saturn', 'dnahelix', 'supernova', 'snowing', 'torus', '1987A']; // YENİ: 1987A eklendi
+        let templateIndex = 0;
+        let templateCooldown = 0; // Cooldown için zaman damgası (ms)
+        const TEMPLATE_COOLDOWN_TIME = 1000; // 1 saniye cooldown
+        const FIST_THRESHOLD = 0.05; // Yumruk algılama mesafesi (normalized)
+        
+        // ✨ YENİ: 1987A Animasyon Değişkenleri
+        let SN1987A_startTime = 0; // setShape çağrıldığında zamanı tutar.
+        const SHOCK_VELOCITY = 6.0; // Genişleme hızı
+
+        /**
+         * İki normalized MediaPipe landmark'i arasındaki Öklid mesafesini hesaplar.
+         */
+        function distance(lm1, lm2) {
+            return Math.sqrt(Math.pow(lm1.x - lm2.x, 2) + Math.pow(lm1.y - lm2.y, 2));
+        }
+
+        function initExplosionVelocities() {
+            for(let i = 0; i < PARTICLE_COUNT; i++) {
+                const vector = new THREE.Vector3(
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2
+                );
+                vector.normalize().multiplyScalar(Math.random() * 0.5 + 0.5);
+                explosionVelocities[i*3] = vector.x;
+                explosionVelocities[i*3+1] = vector.y;
+                explosionVelocities[i*3+2] = vector.z;
+            }
+        }
+        initExplosionVelocities();
+        for(let i = 0; i < PARTICLE_COUNT; i++) {
+            positions[i*3] = (Math.random() - 0.5) * 100;
+            positions[i*3+1] = (Math.random() - 0.5) * 100;
+            positions[i*3+2] = (Math.random() - 0.5) * 100;
+            
+            targetPositions[i*3] = positions[i*3];
+            targetPositions[i*3+1] = positions[i*3+1];
+            targetPositions[i*3+2] = positions[i*3+2];
+
+            sizes[i] = (Math.random() * 1.5 + 0.5);
+            structureIndices[i] = 0; // Default: Sphere
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particlesGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+        // ✨ YENİ: Partikül Rengini dinamik olarak animasyonda değiştirmek için custom attribute eklendi.
+        particlesGeometry.setAttribute('structureIndex', new THREE.BufferAttribute(structureIndices, 1));
+
+        const getTexture = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(32,32,0,32,32,32);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            grad.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+            grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,64,64);
+            const texture = new THREE.Texture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        };
+        const particlesMaterial = new THREE.PointsMaterial({
+            color: 0x00d2ff,
+            size: 0.2, 
+            map: getTexture(),
+            transparent: true,
+            opacity: 0.9,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true
+        });
+        const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particleSystem);
+        
+        // --- 2. Matematiksel Şekil Üreticileri (Aynı) ---
+        function getPointOnSphere(i) {
+            const R = 12;
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1); 
+            const r_final = R * Math.pow(Math.random(), 1/3);
+            return { x: r_final * Math.sin(phi) * Math.cos(theta), y: r_final * Math.sin(phi) * Math.sin(theta), z: r_final * Math.cos(phi) };
+        }
+        
+        function getPointOnDysonSphere(i) {
+            const coreRatio = 0.05;
+            if (Math.random() < coreRatio) {
+                const R_STAR = 2;
+                const u = Math.random();
+                const v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1);
+                const r_final = R_STAR * Math.pow(Math.random(), 1/3);
+                return { x: r_final * Math.sin(phi) * Math.cos(theta), y: r_final * Math.sin(phi) * Math.sin(theta), z: r_final * Math.cos(phi) };
+            } else {
+                const R_SHELL = 20;
+                const SHELL_THICKNESS = 0.5;
+                const u = Math.random();
+                const v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1);
+                const r = R_SHELL + (Math.random() - 0.5) * SHELL_THICKNESS;
+                return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi) };
+            }
+        }
+
+
+        function getPointOnTorus(i) {
+            const R = 12;
+            const r = 4;
+            const u = Math.random() * Math.PI * 2;
+            const v = Math.random() * Math.PI * 2;
+            const noise = (Math.random() - 0.5) * 0.5;
+            const x = (R + r * Math.cos(v)) * Math.cos(u);
+            const y = r * Math.sin(v);
+            const z = (R + r * Math.cos(v)) * Math.sin(u);
+            return { x: x + noise, y: y + noise, z: z + noise };
+        }
+        
+        function getPointOnSnowing(i) { return { x: 0, y: 0, z: 0 };
+        }
+        
+        function getPointOnShell(radius) {
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            const noise = 0.5;
+            const r = radius + noise;
+            return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi) };
+        }
+
+        function getPointOnAtom(i) {
+            const r_rand = Math.random();
+            if (r_rand < 0.025) {
+                const u = Math.random();
+                const v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1);
+                const r = Math.random() * 1.5;
+                return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi) };
+            } else if (r_rand < 0.125) {
+                return getPointOnShell(4);
+            } else if (r_rand < 0.30) {
+                return getPointOnShell(7);
+            } else if (r_rand < 0.50) {
+                return getPointOnShell(10);
+            } else {
+                return { x: 0, y: 0, z: 0 };
+            }
+        }
+
+        function getPointOnEarth(i) {
+            // Earth and Orbital Parameters (Units are arbitrary, relative to camera Z=35)
+            const R_EARTH = 9.0; 
+            const THICKNESS_EARTH = 1.0; 
+
+            // Orbital Regimes (Approximation)
+            const R_LEO = 14.0; // Low Earth Orbit (LEO) - High density
+            const THICKNESS_LEO = 3.0;
+            
+            const R_MEO = 28.0; // Medium Earth Orbit (MEO) - Mid density
+            const THICKNESS_MEO = 6.0;
+
+            const R_GEO = 45.0; // Geostationary Earth Orbit (GEO) - Thin, distinct shell
+            const THICKNESS_GEO = 1.5; 
+            
+            const R_HRO_MAX = 60.0; // Highly Random Orbits (HRO) / Deep Space
+
+            // Particle Distribution (Total: 100%)
+            const P_EARTH = 0.30; // Earth Planet Body -> %30'a çıkarıldı (Yoğunlaştırıldı)
+            const P_LEO = 0.35;  // LEO Satellites -> %35'e düşürüldü
+            const P_MEO = 0.10;  // MEO Satellites -> %10'a düşürüldü
+            const P_GEO = 0.05;  // GEO Satellites (Distinct) -> %5 (Aynı)
+            const P_HRO = 0.20;  // Random/Deep Space Objects -> %20 (Aynı)
+            
+            // Helper function to get a point on a shell (defined inline for convenience)
+            // Simulates satellites distributed randomly around a center radius with a thickness.
+            const getShellPoint = (centerR, thickness) => {
+                const u = Math.random();
+                const v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1); 
+                
+                // Add thickness / noise
+                const r = centerR + (Math.random() - 0.5) * thickness; 
+                
+                return { 
+                    x: r * Math.sin(phi) * Math.cos(theta), 
+                    y: r * Math.sin(phi) * Math.sin(theta), 
+                    z: r * Math.cos(phi) 
+                };
+            };
+            
+            const rand = Math.random();
+
+            if (rand < P_EARTH) {
+                // Earth Body: Uniformly distributed volume (R*random^(1/3))
+                const u = Math.random();
+                const v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1);
+                const r_final = R_EARTH * Math.pow(Math.random(), 1/3); 
+                
+                return { 
+                    x: r_final * Math.sin(phi) * Math.cos(theta), 
+                    y: r_final * Math.sin(phi) * Math.sin(theta), 
+                    z: r_final * Math.cos(phi) 
+                };
+            } else if (rand < P_EARTH + P_LEO) {
+                // LEO (Low Earth Orbit)
+                return getShellPoint(R_LEO, THICKNESS_LEO);
+            } else if (rand < P_EARTH + P_LEO + P_MEO) {
+                // MEO (Medium Earth Orbit)
+                return getShellPoint(R_MEO, THICKNESS_MEO);
+            } else if (rand < P_EARTH + P_LEO + P_MEO + P_GEO) {
+                // GEO (Geosynchronous Orbit)
+                return getShellPoint(R_GEO, THICKNESS_GEO);
+            } else {
+                // HRO/Random: Scattered points in a large volume
+                const R = Math.random() * R_HRO_MAX; 
+                const u = Math.random();
+                const v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1);
+                return { 
+                    x: R * Math.sin(phi) * Math.cos(theta), 
+                    y: R * Math.sin(phi) * Math.sin(theta), 
+                    z: R * Math.cos(phi) 
+                };
+            }
+        }
+        
+        function getPointOnDNAHelix(i) {
+            const height = 30;
+            const r = 8;
+            const turns = 5;
+            const noise = 0.5;
+            const y_norm = (i / PARTICLE_COUNT);
+            let y = y_norm * height - (height / 2);
+            const isStrand1 = (i % 2 === 0);
+            let theta = y_norm * 2 * Math.PI * turns;
+            if (!isStrand1) { theta += Math.PI;
+            }
+            let x = r * Math.cos(theta);
+            let z = r * Math.sin(theta);
+            x += (Math.random() - 0.5) * noise;
+            z += (Math.random() - 0.5) * noise;
+            y += (Math.random() - 0.5) * noise;
+            return { x: x, y: y, z: z };
+        }
+
+        function getPointOnSupernova(i) {
+            const R = 25;
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            const r = R * Math.random();
+            return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi) };
+        }
+        
+        
+        function getPointOnSaturn(i) {
+            const PLANET_RADIUS = 6;
+            const RING_THICKNESS = 0.8;
+            const PLANET_RATIO = 0.45;
+            
+            // ✨ GÜNCELLENMİŞ RINGS YAPILANDIRMASI: Yeni dış halkalar ve ağırlıklar eklendi.
+            const RINGS = [
+                // [minR, maxR, weight, sizeMin, sizeMax]
+                
+                // 1. B Ring 
+                [13.5, 17.0, 10, 0.3, 1.0], 
+                
+                // 2. A Ring 
+                [17.0, 22.0, 25, 0.5, 1.5], 
+                
+                // 3. Cassini Division (Boşluk)
+                [22.0, 22.8, 0.5, 0.05, 0.15], 
+
+                // 4. F Ring (Yakın) 
+                [22.8, 24.5, 15, 0.3, 1.0], 
+                
+                // 5. D Ring (Çok ince) 
+                [24.5, 24.7, 1, 0.1, 0.3], 
+                
+                // 6. G Ring (Uzak) 
+                [24.7, 25.5, 1, 0.1, 0.3], 
+                
+                // 7. E Ring (Mevcut en dış halka) - Ağırlık 5
+                [28.0, 32.0, 5, 0.1, 0.4],
+                
+                // ✨ YENİ HALKA 1: E Ring'in dışına (5 * 3 = 15 ağırlık)
+                [34.0, 38.0, 15, 0.2, 0.5], 
+                
+                // ✨ YENİ BOŞLUK (Cassini benzeri)
+                [38.0, 38.8, 0.5, 0.05, 0.15], 
+                
+                // ✨ YENİ HALKA 2: En dışta (5 * 3 = 15 ağırlık)
+                [38.8, 43.0, 15, 0.2, 0.5] 
+            ];
+            
+            const totalRingWeight = RINGS.reduce((sum, ring) => sum + ring[2], 0);
+
+            if (Math.random() < PLANET_RATIO) {
+                const pt = getPointOnSphere(i);
+                sizes[i] = (Math.random() * 1.5 + 0.5); // Gezegen boyut
+                
+                const ratio = pt.x / PLANET_RADIUS;
+                pt.x *= Math.min(Math.abs(ratio), 1.0);
+                pt.y *= Math.min(Math.abs(ratio), 1.0);
+                pt.z *= Math.min(Math.abs(ratio), 1.0);
+                
+                return pt;
+            } else {
+                let targetRing = null;
+                let randomWeight = Math.random() * totalRingWeight;
+                let cumulativeWeight = 0;
+                
+                for (const ring of RINGS) {
+                    cumulativeWeight += ring[2];
+                    if (randomWeight <= cumulativeWeight) {
+                        targetRing = ring;
+                        break;
+                    }
+                }
+                if (!targetRing) targetRing = RINGS[0];
+                
+                const minR = targetRing[0];
+                const maxR = targetRing[1];
+                const sizeMin = targetRing[3];
+                const sizeMax = targetRing[4];
+
+                const r = minR + (Math.random() * (maxR - minR));
+                const theta = Math.random() * Math.PI * 2;
+                
+                // Z eksenindeki kalınlık
+                const z_noise = (Math.random() - 0.5) * RING_THICKNESS;
+                
+                // Halkaların XZ düzleminde olması için
+                let x = r * Math.cos(theta);
+                let y = z_noise; 
+                let z = r * Math.sin(theta);
+                
+                // Boyutları ayarla
+                sizes[i] = Math.random() * (sizeMax - sizeMin) + sizeMin; 
+                
+                return { x: x, y: y, z: z };
+            }
+        }
+        
+        // ✨ YENİ ŞABLON: Supernova 1987A Morfolojisi
+        function getPointOn1987A(i) {
+            const rand = Math.random();
+            const structIndexAttr = particlesGeometry.getAttribute('structureIndex');
+            
+            // Dağılım Oranları
+            const P_CORE = 0.10; // Çekirdek
+            const P_EQUATORIAL = 0.25; // Ekvator Halkası
+            const P_POLAR = 0.15; // Kutup Halkaları
+            const P_SHOCK = 0.50; // Şok Dalgası (Genişleyen Kabuk)
+            
+            let pt;
+
+            if (rand < P_CORE) {
+                // 1. Çekirdek (Core Flash) - Index 1
+                const R_core = 2.0;
+                const noise = 0.4;
+                const r_final = R_core * Math.pow(Math.random(), 1/3); // Uniform volume
+                const u = Math.random();
+                const v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1);
+                
+                pt = { 
+                    x: r_final * Math.sin(phi) * Math.cos(theta) + (Math.random() - 0.5) * noise, 
+                    y: r_final * Math.sin(phi) * Math.sin(theta) + (Math.random() - 0.5) * noise, 
+                    z: r_final * Math.cos(phi) + (Math.random() - 0.5) * noise
+                };
+                sizes[i] = (Math.random() * 0.8 + 0.4); 
+                structIndexAttr.array[i] = 1;
+
+            } else if (rand < P_CORE + P_EQUATORIAL) {
+                // 2. Ekvator Halkası (Main Equatorial Ring) - Index 2
+                const R = 12;
+                const r = 1.0;
+                const noise = 0.5;
+                const u = Math.random() * Math.PI * 2;
+                const v = Math.random() * Math.PI * 2;
+                
+                const x = (R + r * Math.cos(v)) * Math.cos(u);
+                const y = r * Math.sin(v);
+                const z = (R + r * Math.cos(v)) * Math.sin(u);
+                
+                pt = { x: x + (Math.random() - 0.5) * noise, y: y + (Math.random() - 0.5) * noise, z: z + (Math.random() - 0.5) * noise };
+                sizes[i] = (Math.random() * 1.5 + 0.8);
+                structIndexAttr.array[i] = 2;
+
+
+            } else if (rand < P_CORE + P_EQUATORIAL + P_POLAR) {
+                // 3. Polar Halkalar (Two Outer Rings) - Index 3
+                const R_MIN = 18;
+                const R_MAX = 22;
+                const ANGLE = THREE.MathUtils.degToRad(42); // 40-45 derece ortalaması
+                const noise = 0.6;
+                
+                const r_cyl = R_MIN + (Math.random() * (R_MAX - R_MIN)); // Silindirik yarıçap
+                const theta = Math.random() * Math.PI * 2; // Çevresel açı
+                
+                // Konik Yüksekliği (r_cyl ve ANGLE ile belirlenir)
+                const y_base = r_cyl / Math.tan(ANGLE); 
+                
+                // Yukarı (+1) veya Aşağı (-1) Koniyi rastgele seç
+                const sign = (Math.random() < 0.5) ? 1 : -1;
+                
+                // Konik üzerinde nokta (Silindirik-Polardan Kartezyene)
+                const r_final = r_cyl + (Math.random() - 0.5) * 0.5; // Birazcık kalınlık
+                
+                const x = r_final * Math.cos(theta);
+                const y_cone = sign * y_base; 
+                const z = r_final * Math.sin(theta);
+                
+                // Konik üzerinde uniform dağılım için rastgele nokta (Basitleştirilmiş Konik Düzlem)
+                // Y=0 düzlemi yerine, y'nin pozisyonu konik şekli belirler.
+                // Basitçe: r_cyl'yi r olarak kullanıp, y'yi y_cone etrafında gürültüyle dağıtmak.
+                
+                pt = { 
+                    x: x + (Math.random() - 0.5) * noise, 
+                    y: y_cone + (Math.random() - 0.5) * noise * 2, // Daha uzun gürültü payı
+                    z: z + (Math.random() - 0.5) * noise 
+                };
+                sizes[i] = (Math.random() * 0.5 + 0.3);
+                structIndexAttr.array[i] = 3;
+
+
+            } else {
+                // 4. Şok Dalgası (Expanding Shock Front) - Index 4
+                // Başlangıç R: Sadece hedef pozisyonunu hesapla
+                const R0 = 10;
+                const kabuk_kalinligi = 2.0;
+                const noise = 0.6;
+                
+                const u = Math.random();
+                const v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1);
+                
+                // Kabuk içindeki rastgele yarıçap
+                const r_shell = R0 + (Math.random() - 0.5) * kabuk_kalinligi; 
+                
+                // Küresel koordinatlardan Kartezyene
+                const r_final = r_shell + (Math.random() - 0.5) * noise; 
+                
+                pt = { 
+                    x: r_final * Math.sin(phi) * Math.cos(theta), 
+                    y: r_final * Math.sin(phi) * Math.sin(theta), 
+                    z: r_final * Math.cos(phi) 
+                };
+                sizes[i] = (Math.random() * 0.4 + 0.1); 
+                structIndexAttr.array[i] = 4;
+            }
+            
+            return pt;
+        }
+
+
+        // --- 3. Şekil Güncelleme Fonksiyonları (Aynı) ---
+        function setShape(type) {
+            currentShape = type;
+            document.querySelectorAll('#template-buttons .template-btn').forEach(b => {
+                if(b.id !== 'btn-toggle-color' && b.id !== 'btn-exit' && b.id !== 'btn-toggle-camera' && b.id !== 'btn-toggle-settings') { 
+                    b.classList.remove('active');
+                }
+            });
+            // SaturnX butonu için kontrolü güncelledik
+            const activeBtn = document.getElementById(`btn-${type}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            } else if (type === 'saturn') { 
+                const saturnXBtn = document.getElementById('btn-saturnX');
+                if (saturnXBtn) { saturnXBtn.classList.add('active'); }
+            }
+            
+            // Eğer MediaPipe üzerinden geçiş yapıldıysa, templateIndex'i güncel tut
+            templateIndex = TEMPLATES.indexOf(type);
+            if (templateIndex === -1) templateIndex = 0; // Bulamazsa sıfırla
+
+            rotationXVelocity = 0; 
+            rotationYVelocity = 0;
+            const isDynamicShape = (type === 'snowing' || type === 'supernova' || type === '1987A'); // YENİ: 1987A eklendi
+            
+            // ✨ YENİ: 1987A ise başlangıç zamanını kaydet
+            if (type === '1987A') {
+                SN1987A_startTime = clock.elapsedTime;
+            }
+
+            if (!isDynamicShape || type === 'supernova' || type === '1987A') { // Snowing harici statik/morphing şekiller
+                const sizeAttr = particlesGeometry.getAttribute('size');
+                const structIndexAttr = particlesGeometry.getAttribute('structureIndex'); // YENİ
+                
+                for(let i = 0; i < PARTICLE_COUNT; i++) {
+                    let pt;
+                    // Default değerleri sıfırla
+                    structIndexAttr.array[i] = 0;
+
+                    switch(type) {
+                        case 'dysonsphere': pt = getPointOnDysonSphere(i);
+                        sizeAttr.array[i] = (Math.random() * 1.5 + 0.5);
+                        break;
+                        case 'dnahelix': pt = getPointOnDNAHelix(i); sizeAttr.array[i] = (Math.random() * 1.5 + 0.5);
+                        break;
+                        case 'atom': pt = getPointOnAtom(i); sizeAttr.array[i] = (Math.random() * 1.5 + 0.5); break;
+                        case 'earth': pt = getPointOnEarth(i);
+                        sizeAttr.array[i] = (Math.random() * 1.5 + 0.5); break;
+                        case 'saturn': pt = getPointOnSaturn(i); break; 
+                        case 'supernova': pt = getPointOnSupernova(i);
+                        sizeAttr.array[i] = (Math.random() * 1.5 + 0.5); break; 
+                        case 'torus': pt = getPointOnTorus(i); sizeAttr.array[i] = (Math.random() * 1.5 + 0.5);
+                        break;
+                        case '1987A': 
+                            pt = getPointOn1987A(i); // structIndex ve size burada set edilir.
+                        break;
+                        default: pt = getPointOnSphere(i); sizeAttr.array[i] = (Math.random() * 1.5 + 0.5); break;
+                    }
+                    targetPositions[i*3] = pt.x;
+                    targetPositions[i*3+1] = pt.y;
+                    targetPositions[i*3+2] = pt.z;
+                }
+                sizeAttr.needsUpdate = true;
+                structIndexAttr.needsUpdate = true; // YENİ: structureIndex güncellendi
+            } else if (type === 'snowing') { 
+                for(let i = 0; i < PARTICLE_COUNT; i++) {
+                    targetPositions[i*3] = 0;
+                    targetPositions[i*3+1] = 0;
+                    targetPositions[i*3+2] = 0;
+                }
+            }
+        }
+
+        // --- 4. Event Listeners ve Init ---
+        const colorPicker = document.getElementById('colorPicker');
+        colorPicker.addEventListener('input', (e) => {
+            particlesMaterial.color.set(e.target.value);
+        });
+        setShape('sphere');
+        
+        // Renk Panelini Aç/Kapat
+        function toggleColorPanel() {
+            const panel = document.getElementById('color-picker-panel');
+            panel.classList.toggle('hidden');
+            // Renk açılırsa ayarlar panelini kapat
+            if (!panel.classList.contains('hidden')) {
+                document.getElementById('settings-panel').classList.add('hidden');
+            }
+        }
+        window.toggleColorPanel = toggleColorPanel;
+
+        // YENİ: Ayarlar Panelini Aç/Kapat
+        function toggleSettingsPanel() {
+            const panel = document.getElementById('settings-panel');
+            panel.classList.toggle('hidden');
+             // Ayarlar açılırsa renk panelini kapat
+            if (!panel.classList.contains('hidden')) {
+                document.getElementById('color-picker-panel').classList.add('hidden');
+            }
+        }
+        window.toggleSettingsPanel = toggleSettingsPanel;
+        
+        // YENİ: Kamera Kontrol UI Elemanları
+        const videoElement = document.getElementById('input_video');
+        const loadingDiv = document.getElementById('loading');
+        const toggleCameraButton = document.getElementById('btn-toggle-camera');
+
+        function startGame() {
+            const startPanel = document.getElementById('start-button-container');
+            const startButtonPng = document.getElementById('start-button-png');
+            const templateButtons = document.getElementById('template-buttons');
+            const colorPanel = document.getElementById('color-picker-panel');
+            const settingsPanel = document.getElementById('settings-panel'); // YENİ
+            const loadingDiv = document.getElementById('loading');
+
+            // 1. İKON DEĞİŞİMİ
+            startButtonPng.src = 'assets/icons/switchon.png';
+            startButtonPng.alt = 'Simülasyon Başladı';
+            startButtonPng.title = 'Simülasyon Başladı';
+
+            // 2. Panel Gizleme
+            startPanel.style.opacity = '0';
+            
+            // Gizleme animasyonu bitince panelleri göster
+            setTimeout(() => {
+                startPanel.style.display = 'none';
+                templateButtons.classList.remove('initially-hidden');
+                colorPanel.classList.remove('initially-hidden');
+                settingsPanel.classList.remove('initially-hidden'); // YENİ
+                colorPanel.classList.add('hidden'); 
+                settingsPanel.classList.add('hidden'); // YENİ
+
+            }, 500);
+            
+            // YENİ: Ayarların başlangıç değerlerini set et.
+            // CONCENTRATION_SPEED ve ROTATION_DAMPING kaldırıldı.
+            document.getElementById('setting-mouse-sensitivity').value = rotationSensitivity;
+            document.getElementById('setting-hand-sensitivity').value = handRotationSensitivity;
+            // PARTICLE_COUNT kaldırıldı.
+            
+            // CONCENTRATION_SPEED ve ROTATION_DAMPING görüntüleme kaldırıldı.
+            document.getElementById('mouse-sens-display').textContent = rotationSensitivity;
+            document.getElementById('hand-sens-display').textContent = handRotationSensitivity;
+            // PARTICLE_COUNT görüntüleme kaldırıldı.
+        }
+        window.startGame = startGame;
+        
+        // BAŞLANGIÇ EKRANINA DÖNÜŞ SİSTEMİ (Kamera Kontrolü Kapatıldı)
+        function returnToStartScreen() {
+            const startPanel = document.getElementById('start-button-container');
+            const startButtonPng = document.getElementById('start-button-png');
+            const templateButtons = document.getElementById('template-buttons');
+            const colorPanel = document.getElementById('color-picker-panel');
+            const settingsPanel = document.getElementById('settings-panel'); // YENİ
+            
+            // Kamera kontrolünü kapat
+            stopCameraControl();
+
+            // 1. İKON DEĞİŞİMİ
+            startButtonPng.src = 'assets/icons/switchoff.png';
+            startButtonPng.alt = 'Başlatma Butonu';
+            startButtonPng.title = 'Simülasyonu Başlat';
+            
+            // Panelleri gizle
+            templateButtons.classList.add('initially-hidden');
+            colorPanel.classList.add('initially-hidden');
+            settingsPanel.classList.add('initially-hidden'); // YENİ
+            loadingDiv.classList.add('initially-hidden');
+            
+            // Başlangıç panelini göster
+            startPanel.style.display = 'flex'; 
+            setTimeout(() => {
+                 startPanel.style.opacity = '1'; 
+            }, 10);
+        }
+        window.returnToStartScreen = returnToStartScreen;
+        
+        // --- YENİ: Settings Panel Event Listeners ---
+        // 'setting-concentration-speed' ve 'setting-rotation-damping' kaldırıldı.
+
+        document.getElementById('setting-mouse-sensitivity').addEventListener('input', (e) => {
+            rotationSensitivity = parseFloat(e.target.value);
+            document.getElementById('mouse-sens-display').textContent = rotationSensitivity;
+        });
+        
+        document.getElementById('setting-hand-sensitivity').addEventListener('input', (e) => {
+            handRotationSensitivity = parseFloat(e.target.value);
+            document.getElementById('hand-sens-display').textContent = handRotationSensitivity;
+        });
+        
+        // 'setting-particle-count' kaldırıldı.
+
+
+        // --- YENİ: MediaPipe Hand Tracking Logic ---
+
+        function onResults(results) { 
+            loadingDiv.style.display = 'none';
+            
+            let handsCount = (results.multiHandLandmarks && results.multiHandLandmarks.length) || 0;
+
+            if (handsCount === 2) { 
+                // Two hands detected -> mevcut davranış (ölçek kontrolü)
+                isHandDetected = true; 
+                isSingleHand = false;
+                
+                const hand1 = results.multiHandLandmarks[0][9]; // Middle finger knuckle
+                const hand2 = results.multiHandLandmarks[1][9];
+                
+                // Calculate Euclidean distance between hands
+                const dx = hand1.x - hand2.x;
+                const dy = hand1.y - hand2.y; 
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                // Map distance to scale: Maps [0.1, 0.8] to [0.5, 2.75] (Farther hands -> Larger scale)
+                const clampedDist = Math.max(0.1, Math.min(0.8, dist));
+                // El mesafesi arttıkça (0.1'den 0.8'e), hedef ölçek 0.5'ten 2.75'e daha hızlı artar.
+                targetScale = 0.5 + ((clampedDist - 0.1) / 0.7) * 2.25; 
+
+                // Tek el ile ilgili önceki durumları temizle
+                previousHandX = null;
+                previousHandY = null; 
+
+            } else if (handsCount === 1) {
+                // Tek el algılandı -> objeyi döndür VEYSE şablonu değiştir
+
+                isHandDetected = true;
+                isSingleHand = true;
+
+                const landmarks = results.multiHandLandmarks[0];
+                const now = Date.now();
+                
+                // Yumruk Algılama Kontrolü
+                const indexMcp = landmarks[5];
+                const middleMcp = landmarks[9];
+                const ringMcp = landmarks[13];
+                const pinkyMcp = landmarks[17];
+                
+                // Parmak ucu (tip) ile ilgili MCP (eklem) arasındaki mesafenin küçük olması yumruk anlamına gelir.
+                const isFistClosed = (
+                    distance(landmarks[8], indexMcp) < FIST_THRESHOLD && // Index Tip to MCP
+                    distance(landmarks[12], middleMcp) < FIST_THRESHOLD && // Middle Tip to MCP
+                    distance(landmarks[16], ringMcp) < FIST_THRESHOLD && // Ring Tip to MCP
+                    distance(landmarks[20], pinkyMcp) < FIST_THRESHOLD    // Pinky Tip to MCP
+                );
+                
+                if (isFistClosed && now > templateCooldown) {
+                    
+                    // ŞABLON GEÇİŞİ YAP
+                    templateIndex = (templateIndex + 1) % TEMPLATES.length;
+                    const nextShape = TEMPLATES[templateIndex];
+                    setShape(nextShape); // Yeni şablonu uygula
+                    playClickSound(); // Mediapipen'den gelen tıklamada da ses çal
+
+                    // Cooldown ayarla
+                    templateCooldown = now + TEMPLATE_COOLDOWN_TIME;
+                    
+                    // Dönüş hızlarını sıfırla
+                    previousHandX = null;
+                    previousHandY = null;
+                    rotationYVelocity = 0;
+                    rotationXVelocity = 0;
+
+                } else if (!isFistClosed) {
+                    // ROTASYON MANTIĞI (Yumruk kapalı değilse)
+
+                    const hand = landmarks[9]; // Orta parmak eklemini referans al
+                    
+                    if (previousHandX === null || previousHandY === null) {
+                        // İlk frame: sadece kaydet
+                        previousHandX = hand.x;
+                        previousHandY = hand.y; 
+                        rotationYVelocity = 0;
+                        rotationXVelocity = 0; 
+                    } else {
+                        const dx = hand.x - previousHandX;
+                        const dy = hand.y - previousHandY; 
+                        
+                        // Yatay döndürme (Y ekseni)
+                        rotationYVelocity = -dx * handRotationSensitivity;
+                        
+                        // Dikey döndürme (X ekseni)
+                        rotationXVelocity = dy * handRotationSensitivity; 
+
+                        previousHandX = hand.x;
+                        previousHandY = hand.y; 
+                    }
+                }
+
+                // Tek elde ölçek reseti 
+                targetScale = 1.0;
+
+            } else {
+                // No hands
+                isHandDetected = false;
+                isSingleHand = false;
+                previousHandX = null;
+                previousHandY = null; 
+                targetScale = 1.0; // Default scale
+            }
+        } 
+
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }
+        });
+        
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        
+        hands.onResults(onResults);
+        
+        // Kamera kurulum ve başlatma fonksiyonu
+        function startCameraControl() {
+            if (isCameraControlEnabled && cam) return; // Zaten açıksa tekrar başlatma
+
+            loadingDiv.style.display = 'block';
+            loadingDiv.classList.remove('initially-hidden');
+            toggleCameraButton.classList.add('active');
+            isCameraControlEnabled = true;
+
+            cam = new Camera(videoElement, { 
+                onFrame: async () => {
+                    await hands.send({ image: videoElement });
+                },
+                width: 1280,
+                height: 720
+            });
+            cam.start();
+        }
+
+        // Kamera durdurma fonksiyonu
+        function stopCameraControl() {
+            if (cam) {
+                cam.stop();
+                cam = null;
+            }
+            isCameraControlEnabled = false;
+            isHandDetected = false; 
+            isSingleHand = false;
+            targetScale = 1.0; 
+            currentScale = 1.0; 
+            previousHandX = null;
+            previousHandY = null; 
+            particleSystem.scale.set(1, 1, 1);
+            loadingDiv.style.display = 'none';
+            loadingDiv.classList.add('initially-hidden');
+            toggleCameraButton.classList.remove('active');
+        }
+
+        // YENİ: Kamera kontrolünü açıp kapatan ana fonksiyon
+        function toggleCameraControl() {
+            if (isCameraControlEnabled) {
+                stopCameraControl();
+            } else {
+                startCameraControl();
+            }
+        }
+        window.toggleCameraControl = toggleCameraControl;
+
+
+        // --- 5, 6, 7. Mouse/Touch Kontrolleri (Aynı) ---
+        let previousMousePosition = { x: 0, y: 0 };
+        
+
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        document.addEventListener('mousedown', (e) => {
+            if (isCameraControlEnabled) return; // Kamera kontrolü aktifse mouse kontrolünü engelle
+
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+
+            if (e.button === 0) { 
+                isDragging = true;
+                document.body.style.cursor = 'grabbing';
+                rotationXVelocity = 0;
+                rotationYVelocity = 0;
+            }
+
+            if (e.button === 2) { 
+                isRMBInteraction = true;
+                if (currentShape !== 'snowing') { 
+                    document.body.style.cursor = 'ns-resize';
+                } else {
+                    document.body.style.cursor = 'default';
+                 for(let i = 0; i < PARTICLE_COUNT * 3; i++) {
+                        explosionVelocities[i] = 0;
+               }
+                }
+             }
+        });
+        document.addEventListener('mouseup', (e) => {
+            if (isCameraControlEnabled) return;
+            isDragging = false;
+            isRMBInteraction = false;
+            document.body.style.cursor = 'default';
+
+            if (e.button === 2 && currentShape === 'snowing') { 
+                initExplosionVelocities();
+            }
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (isCameraControlEnabled) return;
+
+            const deltaMove = { x: e.clientX - previousMousePosition.x, y: e.clientY - previousMousePosition.y };
+
+            if(isDragging) {
+                // YENİ: rotationSensitivity kullanılıyor
+                rotationYVelocity = deltaMove.x * rotationSensitivity;
+                rotationXVelocity = deltaMove.y * rotationSensitivity;
+                
+                particleSystem.rotation.y += rotationYVelocity;
+                particleSystem.rotation.x += rotationXVelocity;
+            }
+
+            if(isRMBInteraction && currentShape !== 'snowing') { 
+                const zoomSensitivity = 0.1;
+               
+                let newZ = camera.position.z - (deltaMove.y * zoomSensitivity);
+                
+                if(newZ < 5) newZ = 5;
+                if(newZ > 100) newZ = 100;
+  
+                camera.position.z = newZ;
+            }
+
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+        
+        let prevTouchDistance = 0;
+        let isTouchDragging = false; 
+        let isThreeFingerInteraction = false; 
+
+        function getDistance(touches) {
+            return Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
+        }
+
+        document.addEventListener('touchstart', (e) => {
+            if (isCameraControlEnabled) return; // Kamera kontrolü aktifse touch kontrolünü engelle
+
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                previousMousePosition = { x: touch.pageX, y: touch.pageY };
+                isTouchDragging = true;
+                isThreeFingerInteraction = false; 
+                rotationXVelocity = 0;
+                rotationYVelocity = 0;
+            } else if (e.touches.length === 2) {
+                prevTouchDistance = getDistance(e.touches);
+                isTouchDragging = false; 
+                isThreeFingerInteraction = false; 
+            } else if (e.touches.length === 3) {
+                isThreeFingerInteraction = true;
+                isTouchDragging = false;
+                if (currentShape === 'snowing') {
+                 for(let i = 0; i < PARTICLE_COUNT * 3; i++) {
+                        explosionVelocities[i] = 0;
+                    }
+                }
+            }
+        }, { passive: true });
+        document.addEventListener('touchmove', (e) => {
+            if (isCameraControlEnabled) return;
+
+            if (e.touches.length === 1 && isTouchDragging) {
+                const touch = e.touches[0];
+                const deltaMove = { x: touch.pageX - previousMousePosition.x, y: touch.pageY - previousMousePosition.y };
+                // YENİ: rotationSensitivity kullanılıyor
+                rotationYVelocity = deltaMove.x * rotationSensitivity * 3; 
+                rotationXVelocity = deltaMove.y * rotationSensitivity * 3;
+                
+                particleSystem.rotation.y += rotationYVelocity;
+                particleSystem.rotation.x += rotationXVelocity;
+                previousMousePosition = { x: touch.pageX, y: touch.pageY };
+            } else if (e.touches.length === 2) {
+                const currentTouchDistance = getDistance(e.touches);
+                const zoomFactor = 0.05; 
+                const deltaDistance = currentTouchDistance - prevTouchDistance;
+                let newZ = camera.position.z - (deltaDistance * zoomFactor);
+                if (newZ < 5) newZ = 5;
+                if (newZ > 100) newZ = 100;
+
+                camera.position.z = newZ;
+
+                prevTouchDistance = currentTouchDistance;
+            }
+        }, { passive: false });
+        document.addEventListener('touchend', (e) => {
+            if (isCameraControlEnabled) return;
+            isTouchDragging = false;
+            
+            if (e.touches.length < 3 && isThreeFingerInteraction) {
+                isThreeFingerInteraction = false;
+                if (currentShape === 'snowing') { 
+                    initExplosionVelocities();
+                }
+            }
+        });
+
+        // --- 8. ANİMASYON DÖNGÜSÜ (Aynı) ---
+        let clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const time = clock.elapsedTime;
+            
+            const posAttr = particlesGeometry.getAttribute('position');
+            const targetPosAttr = particlesGeometry.getAttribute('targetPositions');
+            const sizeAttr = particlesGeometry.getAttribute('size');
+            const structIndexAttr = particlesGeometry.getAttribute('structureIndex'); // YENİ
+
+            const isConcentrating = (currentShape === 'snowing' && isRMBInteraction && !isCameraControlEnabled) ||
+            (currentShape === 'snowing' && isThreeFingerInteraction && !isCameraControlEnabled);
+
+            // 1. Partikül Morflama
+            if (isConcentrating) { 
+                // YENİ: CONCENTRATION_SPEED kullanılıyor
+                for(let i = 0; i < PARTICLE_COUNT; i++) {
+                    const x_idx = i * 3;
+                    const y_idx = i * 3 + 1;
+                    const z_idx = i * 3 + 2;
+                    posAttr.array[x_idx] *= (1 - CONCENTRATION_SPEED);
+                    posAttr.array[y_idx] *= (1 - CONCENTRATION_SPEED);
+                    posAttr.array[z_idx] *= (1 - CONCENTRATION_SPEED);
+                }
+                posAttr.needsUpdate = true;
+            } else if (currentShape === 'snowing' && !isRMBInteraction && !isThreeFingerInteraction && !isCameraControlEnabled) { 
+                const EXPLOSION_SPEED = 0.3;
+                const EXPLOSION_BOUNDARY_SQUARED = 50 * 50; 
+                
+                for(let i = 0; i < PARTICLE_COUNT; i++) {
+                    const x_idx = i * 3;
+                    const y_idx = i * 3 + 1;
+                    const z_idx = i * 3 + 2;
+                    posAttr.array[x_idx] += explosionVelocities[x_idx] * EXPLOSION_SPEED;
+                    posAttr.array[y_idx] += explosionVelocities[y_idx] * EXPLOSION_SPEED;
+                    posAttr.array[z_idx] += explosionVelocities[z_idx] * EXPLOSION_SPEED;
+                    const distSq = posAttr.array[x_idx]**2 + posAttr.array[y_idx]**2 + posAttr.array[z_idx]**2;
+                    if (distSq > EXPLOSION_BOUNDARY_SQUARED) {
+                        posAttr.array[x_idx] = (Math.random() - 0.5) * 5;
+                        posAttr.array[y_idx] = (Math.random() - 0.5) * 5;
+                        posAttr.array[z_idx] = (Math.random() - 0.5) * 5;
+                        const vector = new THREE.Vector3( (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2 );
+                        vector.normalize().multiplyScalar(Math.random() * 0.5 + 0.5); 
+                        explosionVelocities[x_idx] = vector.x;
+                        explosionVelocities[y_idx] = vector.y;
+                        explosionVelocities[z_idx] = vector.z;
+                    }
+                }
+                posAttr.needsUpdate = true;
+            } else {
+                // Normal morflama
+                const lerpSpeed = 5 * delta;
+                const elapsedTime = time - SN1987A_startTime; // 1987A için göreceli zaman
+                
+                // --- 1987A Şekline Özel Dinamikler ---
+                if (currentShape === '1987A') {
+                    const R_CORE = 2.0;
+                    const CORE_JITTER = 0.4;
+                    const CORE_PULSE = 1.0 + 0.03 * Math.sin(time * 6); // Çekirdek Parlaması/Titreşimi
+                    const RING_PULSE = 1.0 + 0.02 * Math.sin(time * 1.2); // Halka Parlaması
+                    const SHOCK_R_0 = 10;
+                    const SHOCK_R_CURRENT = SHOCK_R_0 + Math.min(elapsedTime, 10.0) * SHOCK_VELOCITY; // Genişleme: Max 10 saniye hızla genişler.
+                    const SHOCK_THICKNESS = 2.0;
+                    const SHOCK_R_INNER = SHOCK_R_CURRENT - SHOCK_THICKNESS / 2;
+                    const SHOCK_R_OUTER = SHOCK_R_CURRENT + SHOCK_THICKNESS / 2;
+                    
+                    // Şok kabuğunun opaklığı zamanla azalsın
+                    const shockOpacity = Math.max(0.1, 1.0 - (elapsedTime / 10.0));
+                    
+                    particlesMaterial.opacity = (structIndexAttr.array.some(index => index === 4) && elapsedTime > 3.0) ? shockOpacity : 0.9;
+                    particlesMaterial.size = 0.5; // Genel boyutu biraz artır
+
+                    for(let i = 0; i < PARTICLE_COUNT; i++) {
+                        const x_idx = i * 3;
+                        const y_idx = i * 3 + 1;
+                        const z_idx = i * 3 + 2;
+                        
+                        let tx = targetPositions[x_idx];
+                        let ty = targetPositions[y_idx];
+                        let tz = targetPositions[z_idx];
+                        
+                        const structure = structIndexAttr.array[i];
+
+                        if (structure === 1) { 
+                            // Çekirdek Titreşimi
+                            tx = targetPositions[x_idx] * CORE_PULSE;
+                            ty = targetPositions[y_idx] * CORE_PULSE;
+                            tz = targetPositions[z_idx] * CORE_PULSE;
+                        } else if (structure === 2) {
+                            // Ekvator Halkası Titreşimi
+                            const R_VEC = Math.sqrt(tx*tx + tz*tz);
+                            tx = tx * (RING_PULSE + R_VEC / 12 * 0.05); // Yarıçapla orantılı titreşim
+                            tz = tz * (RING_PULSE + R_VEC / 12 * 0.05);
+                        } else if (structure === 4) {
+                            // Şok Dalgası Genişlemesi
+                            const distance = Math.sqrt(tx*tx + ty*ty + tz*tz);
+                            
+                            // Target pozisyonunu normalize et, sonra anlık yarıçapla çarp
+                            const factor = SHOCK_R_CURRENT / distance;
+                            tx = targetPositions[x_idx] * factor;
+                            ty = targetPositions[y_idx] * factor;
+                            tz = targetPositions[z_idx] * factor;
+                            
+                            // Basitleştirilmiş renk geçişi (Parçacık materyali tek renk olduğu için, opaklık/boyutla taklit edilebilir)
+                            // Materyalin rengini dinamik olarak değiştirmek performansı etkileyeceğinden, burada sadece pozisyon güncelleniyor.
+                            // Partikül boyutu zamanla azalsın (şok ilerledikçe incelir)
+                            sizeAttr.array[i] = Math.max(0.1, 0.4 - (elapsedTime * 0.02)); 
+                            sizeAttr.needsUpdate = true;
+                        }
+                        
+                        // Morflama
+                        posAttr.array[x_idx] += (tx - posAttr.array[x_idx]) * lerpSpeed;
+                        posAttr.array[y_idx] += (ty - posAttr.array[y_idx]) * lerpSpeed;
+                        posAttr.array[z_idx] += (tz - posAttr.array[z_idx]) * lerpSpeed;
+                    }
+                    particlesMaterial.color.set(0x00d2ff); // Genel renk (dış halkaların parlaması için)
+                    
+                } else {
+                    // Normal morflama (1987A değilse)
+                    for(let i = 0; i < PARTICLE_COUNT * 3; i++) {
+                        posAttr.array[i] += (targetPositions[i] - posAttr.array[i]) * lerpSpeed;
+                    }
+                    particlesMaterial.opacity = 0.9; // Opaklığı normale döndür
+                }
+                
+                posAttr.needsUpdate = true;
+
+                // --- Kontrol ve Dönüş Mantığı ---
+                
+                if (isCameraControlEnabled) {
+                    // El kontrolünden gelen hedef ölçeğe yumuşak geçiş
+                    currentScale += (targetScale - currentScale) * 0.1; 
+                    particleSystem.scale.set(currentScale, currentScale, currentScale); 
+                    
+                    if (isHandDetected && isSingleHand) {
+                        // Tek el ile kontrol: elin yatay/dikey hareketine göre döndür
+                        // (Not: Yumruk yapıldığında rotationYVelocity/XVelocity sıfırlanır, bu yüzden burada otomatik olarak durur.)
+                        particleSystem.rotation.y += rotationYVelocity;
+                        particleSystem.rotation.x += rotationXVelocity; 
+                        
+                        // Yavaşça damping uygula
+                        rotationYVelocity *= handRotationDamping;
+                        rotationXVelocity *= handRotationDamping; 
+                    } else if (isHandDetected && !isSingleHand) {
+                        // İki el: hafif otomatik dönüş
+                        const rotSpeed = 0.05; 
+                        particleSystem.rotation.y += rotSpeed * delta;
+                        rotationYVelocity = 0;
+                        rotationXVelocity = 0;
+                    } else {
+                        // El Algılama Yok: Dönüşü durdur
+                        rotationYVelocity = 0;
+                        rotationXVelocity = 0;
+                    }
+
+                } else {
+                    // El Kontrolü Pasif: Eski kontrol ve dönüş mantığı
+                    
+                    if (!isDragging && !isTouchDragging) { 
+                        // YENİ: ROTATION_DAMPING kullanılıyor
+                        rotationYVelocity *= ROTATION_DAMPING;
+                        rotationXVelocity *= ROTATION_DAMPING;
+                        
+                        particleSystem.rotation.y += rotationYVelocity;
+                        particleSystem.rotation.x += rotationXVelocity;
+    
+                        // Dyson Sphere'a özel salınım hareketi kaldırıldı.
+                        particleSystem.scale.set(1, 1, 1);
+    
+                    } else {
+                        // Sürükleme Aktif: Ölçeği 1'e sıfırla.
+                        particleSystem.scale.set(1, 1, 1);
+                    }
+                }
+                
+                // Partikül Boyut Ayarı (Saturn ve 1987A hariç)
+                if(currentShape !== 'saturn' && currentShape !== '1987A') { // 1987A eklendi
+                    particlesMaterial.size = (currentShape === 'atom') ?
+                    0.1 : 0.2;
+                } else if (currentShape === 'saturn') {
+                    particlesMaterial.size = 0.15;
+                }
+                // 1987A için size ayarı dinamik olarak yukarıda yapılıyor
+            }
+            
+            // Genel Y ekseni salınımı
+            particleSystem.position.y = Math.sin(time * 0.3) * 0.5;
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        animate();
+
+    </script>
+</body>
+
+</html>
+
+
+
+
+
