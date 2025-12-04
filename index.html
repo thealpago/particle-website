@@ -291,6 +291,29 @@ if ('serviceWorker' in navigator) {
             top: 50%; left: 50%; transform: translate(-50%, -50%);
             color: white; pointer-events: none; text-align: center;
         }
+/* Telefon & Tablet Dikey */
+@media (max-width: 600px) {
+    #template-buttons {
+        flex-wrap: wrap; /* butonlar taşınca alta geçsin */
+        padding: 10px;
+        width: 95%;
+        gap: 8px;
+    }
+
+    .template-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 0.45rem;
+    }
+
+    #color-picker-panel,
+    #settings-panel {
+        bottom: 110px; /* Buton çubuğuna çarpmaması için yukarı al */
+        width: 70%;
+    }
+}
+
+        
     </style>
 
     <div id="start-button-container">
@@ -1638,6 +1661,7 @@ window.playMenuSound = playMenuSound;
 </body>
 
 </html>
+
 
 
 
