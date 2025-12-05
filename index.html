@@ -1,0 +1,2361 @@
+<!-- --- START OF FILE lastonline - Supernova Ripple Update.html --- -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js');
+    });
+}
+</script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Mouse Particles - Ultimate AI Control</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <style>
+        body { 
+            margin: 0;
+            overflow: hidden; 
+            background-color: #020202; 
+            font-family: 'Segoe UI', sans-serif; 
+            touch-action: none;
+            user-select: none;
+        }
+
+        canvas { 
+            display: block;
+        }
+        
+        .initially-hidden {
+            display: none !important; 
+        }
+
+        #start-button-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            background-color: #020202; 
+            transition: opacity 0.5s ease;
+        }
+
+        #start-button-png {
+            width: 150px; 
+            height: auto;
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease; 
+            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.5)); 
+        }
+
+        #start-button-png:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.8));
+        }
+        
+        #start-button-png:active {
+            transform: scale(0.98);
+            filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.3));
+        }
+
+        #color-picker-panel {
+            position: absolute;
+            bottom: 80px; 
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px;
+            width: 113px; 
+            background: linear-gradient(135deg, rgba(20, 20, 20, 0.8), rgba(10, 10, 10, 0.8));
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 210, 255, 0.3); 
+            color: white;
+            z-index: 10;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.7);
+            user-select: none;
+            text-align: center;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        
+        #color-picker-panel.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-50%) translateY(10px);
+        }
+
+        #color-picker-panel label {
+            display: block;
+            font-size: 0.8rem; 
+            margin-bottom: 6px; 
+            color: #00d2ff;
+            font-weight: 600;
+        }
+
+        #settings-panel {
+            position: absolute;
+            bottom: 80px; 
+            left: 13%;
+            transform: translateX(-50%);
+            padding: 15px;
+            width: 260px;
+            max-height: 60vh;
+            overflow-y: auto;
+            background: linear-gradient(135deg, rgba(20, 20, 20, 0.85), rgba(10, 10, 10, 0.85));
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 210, 255, 0.3); 
+            color: white;
+            z-index: 10;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.7);
+            user-select: none;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        #settings-panel::-webkit-scrollbar { width: 5px; }
+        #settings-panel::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        #settings-panel::-webkit-scrollbar-thumb { background: rgba(0, 210, 255, 0.3); border-radius: 5px; }
+        
+        #settings-panel.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-50%) translateY(10px);
+        }
+
+        .setting-group {
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed rgba(0, 210, 255, 0.1);
+        }
+
+        .setting-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        #settings-panel label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem; 
+            margin-bottom: 4px; 
+            color: #00d2ff;
+            font-weight: 600;
+        }
+        
+        #settings-panel input[type="range"],
+        #settings-panel input[type="number"] {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        
+        #settings-panel input[type="number"] {
+            width: 60px;
+            padding: 3px;
+            text-align: right;
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .value-display {
+            font-size: 0.75rem;
+            color: #fff;
+            font-weight: 400;
+        }
+
+        #mass-settings-section {
+            display: none;
+            margin-top: 10px;
+            border-top: 2px solid rgba(0, 210, 255, 0.2);
+            padding-top: 10px;
+        }
+
+        #mass-settings-section h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.85rem;
+            color: #fff;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #template-buttons {
+            position: absolute;
+            bottom: 18px; 
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex; 
+            gap: 6px; 
+            padding: 7px 12px; 
+            background: rgba(10, 10, 10, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 18px; 
+            border: 1px solid rgba(0, 210, 255, 0.2);
+            z-index: 10;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7);
+        }
+
+        .template-btn {
+            position: relative;
+            width: 43.125px; 
+            height: 43.125px;
+            padding: 0;
+            font-size: 0.5rem; 
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            overflow: hidden;
+            outline: none; 
+            user-select: none;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 210, 255, 0.1), rgba(10, 10, 10, 0.2));
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+            text-align: center;
+            line-height: 1.1; 
+            text-shadow: 0 0 5px #000;
+            border: 2px solid rgba(0, 210, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .template-btn.icon-btn {
+            font-size: 1.2rem;
+        }
+
+        .template-btn:active, .template-btn:focus {
+            outline: none;
+            transform: scale(0.95); 
+            box-shadow: 
+                0 0 5px rgba(0, 0, 0, 0.9), 
+                0 0 10px rgba(0, 210, 255, 0.8), 
+                inset 0 0 10px rgba(0, 255, 255, 0.7);
+        }
+
+        .template-btn:hover {
+            transform: scale(1.1) translateY(-1px);
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.8), 0 0 5px rgba(0, 0, 0, 0.9);
+            border-color: #00ffff;
+            color: #fff;
+        }
+        
+        .template-btn.active {
+            transform: scale(1.0);
+            box-shadow: 
+                0 0 30px rgba(0, 210, 255, 1), 
+                0 0 10px rgba(0, 210, 255, 0.7),
+                inset 0 0 10px rgba(0, 255, 255, 0.7);
+            border-color: #00ffff;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 210, 255, 0.2), rgba(0, 150, 200, 0.2));
+            color: #ccc;
+            text-shadow: 0 0 5px #000;
+        }
+        
+        #btn-toggle-camera.active {
+            border-color: #00ff88;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 1), inset 0 0 10px rgba(0, 255, 136, 0.7);
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 25px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 6px; 
+            cursor: pointer;
+            background: transparent;
+            transition: all 0.2s;
+        }
+        input[type="color"]:hover {
+            border-color: #00d2ff;
+        }
+        
+        #input_video { position: absolute; top: 0; left: 0; width: 0; height: 0; opacity: 0; }
+        
+        #loading {
+            position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; pointer-events: none; text-align: center;
+            font-size: 1.2em; text-shadow: 0 0 10px cyan;
+        }
+        
+        @media (max-width: 600px) {
+            #template-buttons {
+                flex-wrap: wrap; 
+                padding: 10px;
+                width: 95%;
+                gap: 8px;
+            }
+
+            .template-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 0.45rem;
+            }
+
+            #color-picker-panel,
+            #settings-panel {
+                bottom: 110px; 
+                width: 70%;
+            }
+        }
+    </style>
+
+    <div id="start-button-container">
+        <img 
+            src="assets/icons/switchoff.png" 
+            id="start-button-png" 
+            onclick="startGame()"
+            alt="Başlatma Butonu"
+            title="Simülasyonu Başlat"
+        />
+    </div>
+
+    <div id="settings-panel" class="initially-hidden hidden">
+        <!-- Genel Ayarlar -->
+        <div class="setting-group">
+            <label for="setting-mouse-sensitivity">
+                <span>Mouse Sensitivity</span>
+                <span id="mouse-sens-display" class="value-display">0.005</span>
+            </label>
+            <input type="range" id="setting-mouse-sensitivity" min="0.001" max="0.02" step="0.001" value="0.005">
+        </div>
+
+        <div class="setting-group">
+            <label for="setting-hand-sensitivity">
+                <span>Hand Sensitivity</span>
+                <span id="hand-sens-display" class="value-display">3.0</span>
+            </label>
+            <input type="range" id="setting-hand-sensitivity" min="0.5" max="10.0" step="0.5" value="3.0">
+        </div>
+
+        <div class="setting-group">
+            <label for="setting-ui-opacity">
+                <span>UI Opacity</span>
+                <span id="ui-opacity-display" class="value-display">0.8</span>
+            </label>
+            <input type="range" id="setting-ui-opacity" min="0.1" max="1.0" step="0.05" value="0.8">
+        </div>
+
+        <div id="mass-settings-section">
+            <h4>Mass Settings</h4>
+            
+            <div class="setting-group">
+                <label>Sphere Radius <span id="mass-radius-display" class="value-display">5</span></label>
+                <input type="range" id="mass-radius" min="1" max="10" step="0.1" value="5">
+            </div>
+            
+            <div class="setting-group">
+                <label>Plane Height <span id="mass-height-display" class="value-display">4</span></label>
+                <input type="range" id="mass-height" min="-5" max="10" step="0.1" value="4">
+            </div>
+
+            <div class="setting-group">
+                <label>Bend Factor <span id="mass-bend-display" class="value-display">0.85</span></label>
+                <input type="range" id="mass-bend" min="0.01" max="0.99" step="0.01" value="0.85">
+            </div>
+
+            <div class="setting-group">
+                <label>Smoothness <span id="mass-smooth-display" class="value-display">20</span></label>
+                <input type="range" id="mass-smooth" min="0" max="50" step="1" value="20">
+            </div>
+
+            <div class="setting-group">
+                <label>Plane Size <span id="mass-planesize-display" class="value-display">40</span></label>
+                <input type="range" id="mass-planesize" min="20" max="200" step="10" value="40">
+            </div>
+            
+            <div class="setting-group">
+                <label>Plane Segments <span id="mass-planeres-display" class="value-display">100</span></label>
+                <input type="range" id="mass-planeres" min="20" max="300" step="10" value="100">
+            </div>
+
+            <div class="setting-group">
+                <label>Sphere Detail <span id="mass-spheredetail-display" class="value-display">7</span></label>
+                <input type="range" id="mass-spheredetail" min="0" max="8" step="1" value="7">
+            </div>
+        </div>
+    </div>
+    
+    <div id="color-picker-panel" class="initially-hidden">
+        <label for="colorPicker">Color</label>
+        <input type="color" id="colorPicker" value="#00d2ff">
+    </div>
+
+    <div id="template-buttons" class="initially-hidden">
+        
+        <button onclick="returnToStartScreen(); playClickSound();" id="btn-exit" class="template-btn icon-btn" title="Başlangıç Ekranına Dön" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
+            <i class="fa-solid fa-power-off"></i>
+        </button>
+        
+        <button onclick="toggleColorPanel(); playMenuSound();" id="btn-toggle-color" class="template-btn icon-btn" title="Renk Ayarını Göster/Gizle" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
+            <i class="fas fa-palette"></i>
+        </button>
+        
+        <button onclick="toggleSettingsPanel(); playMenuSound();" id="btn-toggle-settings" class="template-btn icon-btn" title="Simülasyon Ayarlarını Göster/Gizle" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
+            <i class="fas fa-sliders-h"></i>
+        </button>
+
+        <button onclick="toggleCameraControl(); playMenuSound();" id="btn-toggle-camera" class="template-btn icon-btn" title="Kamera ile Kontrolü Aç/Kapat" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
+            <i class="fas fa-video"></i>
+        </button>
+        
+        <button onclick="setShape('sphere'); playClickSound();" id="btn-sphere" class="template-btn active" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Sphere</button>
+        <button onclick="setShape('dysonsphere'); playClickSound();" id="btn-dysonsphere" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Dyson Sphere</button>
+        <button onclick="setShape('earth'); playClickSound();" id="btn-earth" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Earth</button>
+        <button onclick="setShape('atom'); playClickSound();" id="btn-atom" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Atom</button>
+        <button onclick="setShape('saturn'); playClickSound();" id="btn-saturnX" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">SaturnX</button>
+        <button onclick="setShape('dnahelix'); playClickSound();" id="btn-dnahelix" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">DNA</button> 
+        <button onclick="setShape('supernova'); playClickSound();" id="btn-supernova" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Supernova</button>
+        <button onclick="setShape('snowing'); playClickSound();" id="btn-snowing" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Snowing</button>
+        <button onclick="setShape('torus'); playClickSound();" id="btn-torus" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Torus</button>
+        <button onclick="setShape('1987A'); playClickSound();" id="btn-1987A" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">1987A</button>
+        <button onclick="setShape('shockwave'); playClickSound();" id="btn-shockwave" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">ShockWave</button>
+        
+        <button onclick="setShape('mass'); playClickSound();" id="btn-mass" class="template-btn" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">Mass</button>
+    </div>
+
+    <video id="input_video"></video>
+    <div id="loading" class="initially-hidden">Initializing AI Hand Tracking...</div>
+
+    <script>
+    // --- SESLER ---
+    const hoverSound = new Audio('assets/sounds/hover.mp3'); 
+    const clickSound = new Audio('assets/sounds/click.mp3');
+    const menuSound = new Audio('assets/sounds/menu.mp3'); 
+    
+    hoverSound.volume = 0.5; 
+    clickSound.volume = 0.7;
+    menuSound.volume = 0.5; 
+
+    function playHoverSound() {
+        hoverSound.currentTime = 0; 
+        hoverSound.play().catch(e => {});
+    }
+    window.playHoverSound = playHoverSound;
+    
+    function stopHoverSound() { }
+    window.stopHoverSound = stopHoverSound;
+
+    function playClickSound() {
+        clickSound.currentTime = 0; 
+        clickSound.play().catch(e => {});
+    }
+    window.playClickSound = playClickSound;
+
+    function playMenuSound() {
+        menuSound.currentTime = 0; 
+        menuSound.play().catch(e => {});
+    }
+    window.playMenuSound = playMenuSound;
+
+    // --- 1. Three.js Temel Kurulum ---
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x020202, 0.0015);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 35;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // --- MASS (HIGH DENSITY) DEĞİŞKENLERİ ---
+    let massGroup = new THREE.Group();
+    scene.add(massGroup);
+    massGroup.visible = false;
+    let isMassInit = false;
+    let massSphere, massPlane;
+    
+    let massUniforms = {
+      spherePosition: {value: new THREE.Vector3()},
+      radius: {value: 5},
+      planeHeight: {value: 4},
+      bendHeight: {value: 0.85},
+      smoothness: {value: 20}
+    };
+
+    let massGeomParams = {
+        planeSize: 40,
+        planeResolution: 100,
+        sphereDetail: 7
+    };
+
+    // --- SHOCKWAVE DEĞİŞKENLERİ ---
+    let shockwaveGroup = new THREE.Group();
+    scene.add(shockwaveGroup);
+    shockwaveGroup.visible = false; 
+    let composer;
+    let bloomPass;
+    let ripplePass;
+    let ripples = [];
+    const maxRipples = 10;
+    const rippleDuration = 6.5; 
+    let isShockwaveInit = false;
+
+    // --- PARTICLE SYSTEM DEĞİŞKENLERİ ---
+    let PARTICLE_COUNT = 120000;
+    let CONCENTRATION_SPEED = 0.025; 
+    let ROTATION_DAMPING = 0.95; 
+    let rotationSensitivity = 0.005; 
+    let handRotationSensitivity = 3.0; 
+    
+    let currentShape = 'sphere';
+    const particlesGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    const targetPositions = new Float32Array(PARTICLE_COUNT * 3);
+    const structureIndices = new Float32Array(PARTICLE_COUNT); 
+    const sizes = new Float32Array(PARTICLE_COUNT);
+    // YENİ: Renk Attribute'u (1987A için gerekli)
+    const colors = new Float32Array(PARTICLE_COUNT * 3);
+
+    let isDragging = false;
+    let isRMBInteraction = false;
+    const explosionVelocities = new Float32Array(PARTICLE_COUNT * 3);
+    
+    let rotationXVelocity = 0;
+    let rotationYVelocity = 0;
+    // YENİ: Z Ekseni (Roll) Velocity
+    let rotationZVelocity = 0; 
+    
+    // --- Kamera Kontrol Değişkenleri ---
+    let isHandDetected = false; 
+    let isSingleHand = false; 
+    let targetScale = 1.0;
+    let currentScale = 1.0; 
+    let isCameraControlEnabled = false; 
+    let cam; 
+    const handRotationDamping = 0.85; 
+
+    // --- Şablon Kontrol Değişkenleri ---
+    const TEMPLATES = ['sphere', 'dysonsphere', 'earth', 'atom', 'saturn', 'dnahelix', 'supernova', 'snowing', 'torus', '1987A', 'shockwave', 'mass']; 
+    let templateIndex = 0;
+    let templateCooldown = 0; 
+    const TEMPLATE_COOLDOWN_TIME = 1500; 
+    let lastPinchTime = 0;
+    let lastShockwaveTime = 0; // Shockwave bekleme süresi kontrolü için
+    
+    let SN1987A_startTime = 0; 
+
+    let userSelectedColor = "#00d2ff"; // Varsayılan renk
+    let isVisualFeedbackActive = false; // Tıklama efekti için flag
+
+    // --- 2. Fonksiyonlar ---
+    function distance(lm1, lm2) {
+        return Math.sqrt(Math.pow(lm1.x - lm2.x, 2) + Math.pow(lm1.y - lm2.y, 2));
+    }
+    
+    function getFingerStates(lm) {
+         const fingers = {
+            thumb: false, 
+            index: false, 
+            middle: false, 
+            ring: false,  
+            pinky: false  
+        };
+        fingers.index = lm[8].y < lm[6].y;
+        fingers.middle = lm[12].y < lm[10].y;
+        fingers.ring = lm[16].y < lm[14].y;
+        fingers.pinky = lm[20].y < lm[18].y;
+        return fingers;
+    }
+
+    function initExplosionVelocities() {
+        for(let i = 0; i < PARTICLE_COUNT; i++) {
+            const vector = new THREE.Vector3(
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2
+            );
+            vector.normalize().multiplyScalar(Math.random() * 0.5 + 0.5);
+            explosionVelocities[i*3] = vector.x;
+            explosionVelocities[i*3+1] = vector.y;
+            explosionVelocities[i*3+2] = vector.z;
+        }
+    }
+    initExplosionVelocities();
+    
+    // Geometry Init
+    for(let i = 0; i < PARTICLE_COUNT; i++) {
+        positions[i*3] = (Math.random() - 0.5) * 100;
+        positions[i*3+1] = (Math.random() - 0.5) * 100;
+        positions[i*3+2] = (Math.random() - 0.5) * 100;
+        
+        targetPositions[i*3] = positions[i*3];
+        targetPositions[i*3+1] = positions[i*3+1];
+        targetPositions[i*3+2] = positions[i*3+2];
+
+        sizes[i] = (Math.random() * 1.5 + 0.5);
+        structureIndices[i] = 0; 
+        
+        // Başlangıçta tüm renkler beyaz (1,1,1)
+        colors[i*3] = 1.0;
+        colors[i*3+1] = 1.0;
+        colors[i*3+2] = 1.0;
+    }
+
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particlesGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    particlesGeometry.setAttribute('structureIndex', new THREE.BufferAttribute(structureIndices, 1));
+    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3)); // Renk attribute eklendi
+
+    const getTexture = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64; canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        const grad = ctx.createRadialGradient(32,32,0,32,32,32);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        grad.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0,64,64);
+        const texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    };
+
+    // VertexColors: true yapıldı, böylece partikül bazlı renk atayabiliriz.
+    const particlesMaterial = new THREE.PointsMaterial({
+        color: userSelectedColor,
+        size: 0.2, 
+        map: getTexture(),
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true,
+        vertexColors: true // ÖNEMLİ DEĞİŞİKLİK
+    });
+    
+    const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particleSystem);
+
+    // Helper: Tüm partikül renklerini beyaza sıfırla (Normal modlar için)
+    function resetParticleColors() {
+        const colorAttr = particlesGeometry.getAttribute('color');
+        for(let i = 0; i < PARTICLE_COUNT * 3; i++) {
+            colorAttr.array[i] = 1.0;
+        }
+        colorAttr.needsUpdate = true;
+    }
+
+    // --- MASS (HIGH DENSITY) INIT & HELPERS ---
+    function createMassSphereGeometry(detail) {
+        let g = new THREE.IcosahedronGeometry(1, detail);
+        let c1 = new THREE.Color(0x00ffff);
+        let c2 = new THREE.Color(0xff00ff);
+        let c = new THREE.Color();
+        let clrs = [];
+        
+        for(let i = 0; i < g.attributes.position.count; i++){
+            c.lerpColors(c1, c2, (1 - g.attributes.position.getY(i)) / 2);
+            clrs.push(c.r, c.g, c.b);
+        }
+        g.setAttribute("color", new THREE.Float32BufferAttribute(clrs, 3));
+        return g;
+    }
+
+    function createMassPlaneGeometry(size, segments) {
+        let g = new THREE.PlaneGeometry(size, size, segments, segments);
+        g.rotateX(Math.PI * -0.5);
+        return g;
+    }
+
+    function initMassScene() {
+        if(isMassInit) return;
+        
+        let gs = createMassSphereGeometry(massGeomParams.sphereDetail);
+        let ms = new THREE.PointsMaterial({
+          size: 0.2, 
+          vertexColors: true,
+          onBeforeCompile: shader => {
+            shader.fragmentShader = shader.fragmentShader.replace(
+              `#include <clipping_planes_fragment>`,
+              `
+              if (length(gl_PointCoord - 0.5) > 0.5 ) discard; 
+              #include <clipping_planes_fragment>
+              `
+            );
+          }
+        });
+        massSphere = new THREE.Points(gs, ms);
+        massSphere.scale.setScalar(massUniforms.radius.value);
+        massSphere.userData = {
+          posPrev: new THREE.Vector3(),
+          posNext: new THREE.Vector3(),
+          rotAxis: new THREE.Vector3(),
+          dist: new THREE.Vector3(),
+        };
+        setMassSpherePosition(massSphere.userData.posPrev, 0);
+        massGroup.add(massSphere);
+
+        let gpl = createMassPlaneGeometry(massGeomParams.planeSize, massGeomParams.planeResolution);
+        let mpl = new THREE.PointsMaterial({
+          size: 0.1, 
+          color: 0xffffff,
+          onBeforeCompile: shader => {
+            shader.uniforms.spherePosition = massUniforms.spherePosition;
+            shader.uniforms.radius = massUniforms.radius;
+            shader.uniforms.planeHeight = massUniforms.planeHeight;
+            shader.uniforms.bendHeight = massUniforms.bendHeight;
+            shader.uniforms.smoothness = massUniforms.smoothness;
+            
+            shader.vertexShader = `
+              uniform vec3 spherePosition;
+              uniform float radius;
+              uniform float planeHeight;
+              uniform float bendHeight;
+              uniform float smoothness;
+              
+              varying float h;
+              
+              float getSphereCone(vec3 p, float h, float r){
+                    float dist = length(p.xz - spherePosition.xz);
+                  
+                  float hratio = -r * h;
+                  float limR = sqrt(r * r - hratio * hratio);
+
+                  float res = 0.;
+                  if (dist <= limR){
+                    res = -sqrt(r * r - dist * dist);
+                  }
+                  else {
+                    res = hratio - (dist - limR) * (limR / hratio);
+                  }
+
+                  return res;
+              }
+              
+              vec2 smoothfunc(float a, float b, float k){
+                float h = max(0., min(1., ((b - a) / k) + 0.5));
+                float m = h * (1. - h) * k;
+                return vec2((h * a) + ((1. - h) * b) - (m * 0.5), h);
+              }
+              
+              ${shader.vertexShader}
+            `.replace(
+              `#include <begin_vertex>`,
+              `#include <begin_vertex>
+              
+              float a = planeHeight;
+
+              float b = getSphereCone(transformed, bendHeight, radius);
+              
+              vec2 res = smoothfunc(a, b, smoothness);
+              transformed.y = res.x;
+              h = res.y;
+              
+              `
+            );
+            shader.fragmentShader = `
+              varying float h;
+              ${shader.fragmentShader}
+            `.replace(
+              `vec4 diffuseColor = vec4( diffuse, opacity );`,
+              `
+                vec3 col = mix(vec3(0, 0.5, 1), vec3(1), h);
+                vec4 diffuseColor = vec4( col, opacity );
+              `
+            );
+          }
+        });
+        massPlane = new THREE.Points(gpl, mpl);
+        massGroup.add(massPlane);
+
+        isMassInit = true;
+    }
+
+    function setMassSpherePosition(p, t){
+      p.set(
+        Math.cos(t * 0.314) * 15,
+        0,
+        -Math.sin(t * 0.27) * 15
+      )
+    }
+
+    // --- SHOCKWAVE INIT FONKSİYONU ---
+    function initShockwaveScene() {
+        if(isShockwaveInit) return;
+
+        const light = new THREE.PointLight(0xffffff, 1);
+        light.position.set(5, 5, 5);
+        shockwaveGroup.add(light);
+
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 1000;
+        const starsPositions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i++) {
+            starsPositions[i] = (Math.random() - 0.5) * 200;
+        }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+        const starMaterial = new THREE.PointsMaterial({
+            color: 'cyan',
+            size: 0.1,
+            sizeAttenuation: true
+        });
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        shockwaveGroup.add(stars);
+
+        const innerGeometry = new THREE.IcosahedronGeometry(1, 3);
+        const innerMaterial = new THREE.MeshStandardMaterial({
+            color: 0x222222,
+            roughness: 0.5,
+            metalness: 1,
+            flatShading: true,
+            transparent: true,
+            opacity: 0.7
+        });
+        const innerMesh = new THREE.Mesh(innerGeometry, innerMaterial);
+        shockwaveGroup.add(innerMesh);
+
+        const outerGeometry = new THREE.IcosahedronGeometry(1.15, 3);
+        const wireframeMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.1
+        });
+        const wireframeMesh = new THREE.Mesh(outerGeometry, wireframeMaterial);
+        shockwaveGroup.add(wireframeMesh);
+
+        const swPositions = [];
+        const posAttr = outerGeometry.attributes.position;
+        for (let i = 0; i < posAttr.count; i++) {
+            swPositions.push(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+        }
+        const swParticleGeometry = new THREE.BufferGeometry();
+        swParticleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(swPositions, 3));
+        const swParticleMaterial = new THREE.PointsMaterial({
+            color: 'cyan',
+            size: 0.025
+        });
+        const swParticles = new THREE.Points(swParticleGeometry, swParticleMaterial);
+        shockwaveGroup.add(swParticles);
+
+        composer = new THREE.EffectComposer(renderer);
+        composer.addPass(new THREE.RenderPass(scene, camera));
+
+        bloomPass = new THREE.UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            1.5, 0.4, 0.05
+        );
+        composer.addPass(bloomPass);
+
+        const RippleShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                centers: { value: Array(maxRipples).fill().map(() => new THREE.Vector2(0.5, 0.5)) },
+                times: { value: Array(maxRipples).fill(0.0) },
+                rippleActive: { value: Array(maxRipples).fill(0.0) },
+                maxRadius: { value: 1.0 },
+                amplitude: { value: 0.03 },
+                secondaryAmplitude: { value: 0.01 },
+                speed: { value: 0.3 },
+                frequency: { value: 10.0 },
+                aspect: { value: window.innerWidth / window.innerHeight },
+                smoothing: { value: 0.95 },
+                sigma: { value: 0.6 },
+                fadeDuration: { value: 6.0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                #define PI 3.14159265359
+                #define MAX_RIPPLES ${maxRipples}
+                uniform sampler2D tDiffuse;
+                uniform vec2 centers[MAX_RIPPLES];
+                uniform float times[MAX_RIPPLES];
+                uniform float rippleActive[MAX_RIPPLES];
+                uniform float maxRadius;
+                uniform float amplitude;
+                uniform float secondaryAmplitude;
+                uniform float speed;
+                uniform float frequency;
+                uniform float aspect;
+                uniform float smoothing;
+                uniform float sigma;
+                uniform float fadeDuration;
+                varying vec2 vUv;
+
+                void main() {
+                    vec2 uv = vUv;
+                    vec2 totalWave = vec2(0.0);
+                    for (int i = 0; i < MAX_RIPPLES; i++) {
+                        if (rippleActive[i] > 0.0) {
+                            vec2 aspectUV = vec2((uv.x - centers[i].x) * aspect, uv.y - centers[i].y);
+                            float dist = length(aspectUV);
+                            float t = times[i] * speed;
+                            if (dist < t) {
+                                float normDist = dist / maxRadius;
+                                float decay = 1.0 / (1.0 + sigma * normDist * normDist);
+                                float timeFade = pow(smoothstep(fadeDuration, fadeDuration - 2.0, times[i]), 2.0);
+                                float smoothFactor = smoothstep(1.0 - smoothing, 1.0, normDist);
+                                float primaryWave = amplitude * sin(frequency * (t - dist)) * decay * (1.0 - smoothFactor) * timeFade;
+                                float secondaryWave = secondaryAmplitude * sin(0.5 * frequency * (t - dist) + PI) * decay * (1.0 - smoothFactor) * timeFade;
+                                totalWave += normalize(aspectUV) * (primaryWave + secondaryWave);
+                            }
+                        }
+                    }
+                    uv += totalWave;
+                    gl_FragColor = texture2D(tDiffuse, clamp(uv, 0.0, 1.0));
+                }
+            `
+        };
+
+        ripplePass = new THREE.ShaderPass(RippleShader);
+        ripplePass.renderToScreen = true;
+        composer.addPass(ripplePass);
+
+        isShockwaveInit = true;
+    }
+
+    // --- Matematiksel Şekil Üreticileri ---
+    function getPointOnSphere(i) {
+        const R = 12;
+        const u = Math.random();
+        const v = Math.random();
+        const theta = 2 * Math.PI * u;
+        const phi = Math.acos(2 * v - 1); 
+        const r_final = R * Math.pow(Math.random(), 1/3);
+        return { x: r_final * Math.sin(phi) * Math.cos(theta), y: r_final * Math.sin(phi) * Math.sin(theta), z: r_final * Math.cos(phi) };
+    }
+    
+    function getPointOnDysonSphere(i) {
+        const coreRatio = 0.05;
+        if (Math.random() < coreRatio) {
+            const R_STAR = 2;
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            const r_final = R_STAR * Math.pow(Math.random(), 1/3);
+            return { x: r_final * Math.sin(phi) * Math.cos(theta), y: r_final * Math.sin(phi) * Math.sin(theta), z: r_final * Math.cos(phi) };
+        } else {
+            const R_SHELL = 20;
+            const SHELL_THICKNESS = 0.5;
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            const r = R_SHELL + (Math.random() - 0.5) * SHELL_THICKNESS;
+            return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi) };
+        }
+    }
+
+    function getPointOnTorus(i) {
+        const R = 12;
+        const r = 4;
+        const u = Math.random() * Math.PI * 2;
+        const v = Math.random() * Math.PI * 2;
+        const noise = (Math.random() - 0.5) * 0.5;
+        const x = (R + r * Math.cos(v)) * Math.cos(u);
+        const y = r * Math.sin(v);
+        const z = (R + r * Math.cos(v)) * Math.sin(u);
+        return { x: x + noise, y: y + noise, z: z + noise };
+    }
+    
+    function getPointOnSnowing(i) { return { x: 0, y: 0, z: 0 }; }
+    
+    function getPointOnShell(radius) {
+        const u = Math.random();
+        const v = Math.random();
+        const theta = 2 * Math.PI * u;
+        const phi = Math.acos(2 * v - 1);
+        const noise = 0.5;
+        const r = radius + noise;
+        return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi) };
+    }
+
+    function getPointOnAtom(i) {
+        const r_rand = Math.random();
+        if (r_rand < 0.025) {
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            const r = Math.random() * 1.5;
+            return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi) };
+        } else if (r_rand < 0.125) {
+            return getPointOnShell(4);
+        } else if (r_rand < 0.30) {
+            return getPointOnShell(7);
+        } else if (r_rand < 0.50) {
+            return getPointOnShell(10);
+        } else {
+            return { x: 0, y: 0, z: 0 };
+        }
+    }
+
+    function getPointOnEarth(i) {
+        const R_EARTH = 9.0; 
+        const THICKNESS_EARTH = 1.0; 
+        const R_LEO = 14.0; 
+        const THICKNESS_LEO = 3.0;
+        const R_MEO = 28.0; 
+        const THICKNESS_MEO = 6.0;
+        const R_GEO = 45.0; 
+        const THICKNESS_GEO = 1.5; 
+        const R_HRO_MAX = 60.0; 
+
+        const P_EARTH = 0.30; 
+        const P_LEO = 0.35;  
+        const P_MEO = 0.10;  
+        const P_GEO = 0.05;  
+        const P_HRO = 0.20;  
+        
+        const getShellPoint = (centerR, thickness) => {
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1); 
+            const r = centerR + (Math.random() - 0.5) * thickness; 
+            return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi) };
+        };
+        
+        const rand = Math.random();
+        if (rand < P_EARTH) {
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            const r_final = R_EARTH * Math.pow(Math.random(), 1/3); 
+            return { x: r_final * Math.sin(phi) * Math.cos(theta), y: r_final * Math.sin(phi) * Math.sin(theta), z: r_final * Math.cos(phi) };
+        } else if (rand < P_EARTH + P_LEO) { return getShellPoint(R_LEO, THICKNESS_LEO);
+        } else if (rand < P_EARTH + P_LEO + P_MEO) { return getShellPoint(R_MEO, THICKNESS_MEO);
+        } else if (rand < P_EARTH + P_LEO + P_MEO + P_GEO) { return getShellPoint(R_GEO, THICKNESS_GEO);
+        } else {
+            const R = Math.random() * R_HRO_MAX; 
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            return { x: R * Math.sin(phi) * Math.cos(theta), y: R * Math.sin(phi) * Math.sin(theta), z: R * Math.cos(phi) };
+        }
+    }
+    
+    function getPointOnDNAHelix(i) {
+        const height = 30;
+        const r = 8;
+        const turns = 5;
+        const noise = 0.5;
+        const y_norm = (i / PARTICLE_COUNT);
+        let y = y_norm * height - (height / 2);
+        const isStrand1 = (i % 2 === 0);
+        let theta = y_norm * 2 * Math.PI * turns;
+        if (!isStrand1) { theta += Math.PI; }
+        let x = r * Math.cos(theta);
+        let z = r * Math.sin(theta);
+        x += (Math.random() - 0.5) * noise;
+        z += (Math.random() - 0.5) * noise;
+        y += (Math.random() - 0.5) * noise;
+        return { x: x, y: y, z: z };
+    }
+
+    function getPointOnSupernova(i) {
+        const R = 25;
+        const u = Math.random();
+        const v = Math.random();
+        const theta = 2 * Math.PI * u;
+        const phi = Math.acos(2 * v - 1);
+        const r = R * Math.random();
+        return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi) };
+    }
+    
+    function getPointOnSaturn(i) {
+        const PLANET_RADIUS = 6;
+        const RING_THICKNESS = 0.8;
+        const PLANET_RATIO = 0.45;
+        
+        const RINGS = [
+            [13.5, 17.0, 10, 0.3, 1.0], 
+            [17.0, 22.0, 25, 0.5, 1.5], 
+            [22.0, 22.8, 0.5, 0.05, 0.15], 
+            [22.8, 24.5, 15, 0.3, 1.0], 
+            [24.5, 24.7, 1, 0.1, 0.3], 
+            [24.7, 25.5, 1, 0.1, 0.3], 
+            [28.0, 32.0, 5, 0.1, 0.4],
+            [34.0, 38.0, 15, 0.2, 0.5], 
+            [38.0, 38.8, 0.5, 0.05, 0.15], 
+            [38.8, 43.0, 15, 0.2, 0.5] 
+        ];
+        
+        const totalRingWeight = RINGS.reduce((sum, ring) => sum + ring[2], 0);
+
+        if (Math.random() < PLANET_RATIO) {
+            const pt = getPointOnSphere(i);
+            sizes[i] = (Math.random() * 1.5 + 0.5); 
+            const ratio = pt.x / PLANET_RADIUS;
+            pt.x *= Math.min(Math.abs(ratio), 1.0);
+            pt.y *= Math.min(Math.abs(ratio), 1.0);
+            pt.z *= Math.min(Math.abs(ratio), 1.0);
+            return pt;
+        } else {
+            let targetRing = null;
+            let randomWeight = Math.random() * totalRingWeight;
+            let cumulativeWeight = 0;
+            
+            for (const ring of RINGS) {
+                cumulativeWeight += ring[2];
+                if (randomWeight <= cumulativeWeight) {
+                    targetRing = ring;
+                    break;
+                }
+            }
+            if (!targetRing) targetRing = RINGS[0];
+            
+            const minR = targetRing[0];
+            const maxR = targetRing[1];
+            const sizeMin = targetRing[3];
+            const sizeMax = targetRing[4];
+
+            const r = minR + (Math.random() * (maxR - minR));
+            const theta = Math.random() * Math.PI * 2;
+            const z_noise = (Math.random() - 0.5) * RING_THICKNESS;
+            let x = r * Math.cos(theta);
+            let y = z_noise; 
+            let z = r * Math.sin(theta);
+            sizes[i] = Math.random() * (sizeMax - sizeMin) + sizeMin; 
+            return { x: x, y: y, z: z };
+        }
+    }
+
+    // --- 3. Şekil Güncelleme Fonksiyonları ---
+    function setShape(type) {
+        currentShape = type;
+        document.querySelectorAll('#template-buttons .template-btn').forEach(b => {
+            if(b.id !== 'btn-toggle-color' && b.id !== 'btn-exit' && b.id !== 'btn-toggle-camera' && b.id !== 'btn-toggle-settings') { 
+                b.classList.remove('active');
+            }
+        });
+        const activeBtn = document.getElementById(`btn-${type}`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        } else if (type === 'saturn') { 
+            const saturnXBtn = document.getElementById('btn-saturnX');
+            if (saturnXBtn) { saturnXBtn.classList.add('active'); }
+        }
+        
+        rotationXVelocity = 0; 
+        rotationYVelocity = 0;
+        rotationZVelocity = 0; // Z hızını sıfırla
+
+        // MASS SETTINGS PANEL VISIBILITY
+        const massSettingsSection = document.getElementById('mass-settings-section');
+        if (type === 'mass') {
+            massSettingsSection.style.display = 'block';
+        } else {
+            massSettingsSection.style.display = 'none';
+        }
+
+        // GÖRÜNÜRLÜK YÖNETİMİ
+        if (type === 'shockwave') {
+            initShockwaveScene();
+            particleSystem.visible = false;
+            shockwaveGroup.visible = true;
+            massGroup.visible = false;
+            camera.position.z = 5; 
+        } else if (type === 'mass') {
+            initMassScene();
+            particleSystem.visible = false;
+            shockwaveGroup.visible = false;
+            massGroup.visible = true;
+            camera.position.set(5, 8, 13).setLength(50);
+            camera.lookAt(0, 0, 0); 
+        } else if (type === 'supernova') {
+            // SUPERNOVA ICIN RIPPLE (DALGA) AKTİVASYONU
+            initShockwaveScene(); // Composer ve ripple shader'ı başlat
+            particleSystem.visible = true; // Parçacıkları göster
+            shockwaveGroup.visible = false; // Shockwave'e özel 3D objeyi gizle
+            massGroup.visible = false;
+            if (camera.position.z < 10) camera.position.z = 35;
+            camera.position.x = 0;
+            camera.position.y = 0;
+            camera.lookAt(0,0,0);
+        } else {
+            particleSystem.visible = true;
+            shockwaveGroup.visible = false;
+            massGroup.visible = false;
+            if (camera.position.z < 10) camera.position.z = 35;
+            camera.position.x = 0;
+            camera.position.y = 0;
+            camera.lookAt(0,0,0);
+        }
+
+        const isDynamicShape = (type === 'snowing' || type === 'supernova' || type === '1987A' || type === 'shockwave' || type === 'mass');
+        
+        if (type === '1987A') {
+            SN1987A_startTime = clock.elapsedTime;
+            // SN 1987A için Vertex Rengi Kullanımını Aktif Et (Materyal Beyaz, Renkler Buffer'dan)
+            particlesMaterial.color.setHex(0xFFFFFF); 
+            particlesMaterial.opacity = 1.0;
+
+            const colorAttr = particlesGeometry.getAttribute('color');
+            const sizeAttr = particlesGeometry.getAttribute('size');
+            const structIndexAttr = particlesGeometry.getAttribute('structureIndex');
+
+            // --- YAPISAL ORANLAR ---
+            // Toplam partikül sayısına göre indeks sınırları
+            const countCore = Math.floor(PARTICLE_COUNT * 0.10);  // %10 Çekirdek
+            const countEq   = Math.floor(PARTICLE_COUNT * 0.25);  // %25 Ekvator Halkası
+            const countPolar= Math.floor(PARTICLE_COUNT * 0.15);  // %15 Kutup Halkaları
+            // Geriye kalan %50 Şok Dalgası
+
+            const idxEqStart = countCore;
+            const idxPolarStart = countCore + countEq;
+            const idxShockStart = countCore + countEq + countPolar;
+
+            // --- RENK PALETİ (Normalized RGB) ---
+            const colCore = {r: 0.78, g: 0.91, b: 1.0}; // #c7e8ff
+            const colEq   = {r: 1.0, g: 0.70, b: 0.28}; // #ffb347
+            const colPol  = {r: 1.0, g: 0.83, b: 0.65}; // #ffd4a7
+            const colShockStart = {r: 0.48, g: 0.81, b: 1.0}; // #7ad0ff (Mavi)
+            
+            for(let i = 0; i < PARTICLE_COUNT; i++) {
+                let x, y, z, r, theta, phi;
+                
+                // 1. MERKEZİ ÇÖKME (CORE FLASH) - ID: 1
+                if(i < idxEqStart) {
+                    structIndexAttr.array[i] = 1; 
+                    
+                    // R < 2 küresi içinde rastgele nokta
+                    const u = Math.random();
+                    const v = Math.random();
+                    theta = 2 * Math.PI * u;
+                    phi = Math.acos(2 * v - 1);
+                    r = 2.0 * Math.cbrt(Math.random()); // Hacimsel dağılım
+
+                    x = r * Math.sin(phi) * Math.cos(theta);
+                    y = r * Math.sin(phi) * Math.sin(theta);
+                    z = r * Math.cos(phi);
+
+                    // Hedef pozisyon (Base)
+                    targetPositions[i*3]   = x;
+                    targetPositions[i*3+1] = y;
+                    targetPositions[i*3+2] = z;
+
+                    // Renk
+                    colorAttr.array[i*3]   = colCore.r + (Math.random()-0.5)*0.1;
+                    colorAttr.array[i*3+1] = colCore.g + (Math.random()-0.5)*0.1;
+                    colorAttr.array[i*3+2] = colCore.b;
+                    sizeAttr.array[i] = Math.random() * 0.8 + 0.5;
+                }
+                // 2. EKVATOR HALKASI (MAIN RING) - ID: 2
+                else if (i < idxPolarStart) {
+                    structIndexAttr.array[i] = 2;
+
+                    const R = 12.0; // Büyük yarıçap
+                    const rTube = 1.0; // Tüp yarıçapı
+                    theta = Math.random() * Math.PI * 2;
+                    const tubeAngle = Math.random() * Math.PI * 2;
+                    
+                    // Torus Formülü (Yatay Düzlemde)
+                    x = (R + rTube * Math.cos(tubeAngle)) * Math.cos(theta);
+                    z = (R + rTube * Math.cos(tubeAngle)) * Math.sin(theta);
+                    y = rTube * Math.sin(tubeAngle) * 0.6; // Biraz yassılaştırılmış
+
+                    targetPositions[i*3]   = x;
+                    targetPositions[i*3+1] = y;
+                    targetPositions[i*3+2] = z;
+
+                    colorAttr.array[i*3]   = colEq.r + (Math.random()-0.5)*0.1;
+                    colorAttr.array[i*3+1] = colEq.g + (Math.random()-0.5)*0.1;
+                    colorAttr.array[i*3+2] = colEq.b;
+                    sizeAttr.array[i] = Math.random() * 1.2 + 0.6;
+                }
+                // 3. KUTUP HALKALARI (POLAR RINGS) - ID: 3
+                else if (i < idxShockStart) {
+                    structIndexAttr.array[i] = 3;
+
+                    // Kum saati yapısı: Ekvatorun üstünde ve altında iki halka
+                    // Y ekseni boyunca öteleme
+                    const isTop = Math.random() > 0.5;
+                    const RingR = 18.0 + (Math.random() * 4.0); // 18-22 arası yarıçap
+                    const RingY = isTop ? 14.0 : -14.0; // Yükseklik
+                    const thickness = 2.0;
+
+                    theta = Math.random() * Math.PI * 2;
+                    
+                    // Polar halkalar hafif konik olur
+                    r = RingR + (Math.random()-0.5) * thickness;
+                    
+                    x = r * Math.cos(theta);
+                    z = r * Math.sin(theta);
+                    y = RingY + (Math.random()-0.5) * thickness;
+
+                    targetPositions[i*3]   = x;
+                    targetPositions[i*3+1] = y;
+                    targetPositions[i*3+2] = z;
+
+                    colorAttr.array[i*3]   = colPol.r;
+                    colorAttr.array[i*3+1] = colPol.g;
+                    colorAttr.array[i*3+2] = colPol.b;
+                    sizeAttr.array[i] = Math.random() * 0.8 + 0.3;
+                }
+                // 4. ŞOK DALGASI (SHOCKWAVE) - ID: 4
+                else {
+                    structIndexAttr.array[i] = 4;
+
+                    // Burada targetPositions'ı bir YÖN VEKTÖRÜ (Direction) olarak saklıyoruz.
+                    // Animasyon sırasında yarıçap ile çarpacağız.
+                    const u = Math.random();
+                    const v = Math.random();
+                    theta = 2 * Math.PI * u;
+                    phi = Math.acos(2 * v - 1);
+
+                    // Birim küre üzerindeki yön vektörü
+                    const dx = Math.sin(phi) * Math.cos(theta);
+                    const dy = Math.sin(phi) * Math.sin(theta);
+                    const dz = Math.cos(phi);
+                    
+                    // Gürültü faktörü: Şok dalgası tam pürüzsüz değildir
+                    const noise = 1.0 + (Math.random() - 0.5) * 0.15;
+
+                    targetPositions[i*3]   = dx * noise;
+                    targetPositions[i*3+1] = dy * noise;
+                    targetPositions[i*3+2] = dz * noise;
+
+                    // Başlangıç rengi (Mavi)
+                    colorAttr.array[i*3]   = colShockStart.r;
+                    colorAttr.array[i*3+1] = colShockStart.g;
+                    colorAttr.array[i*3+2] = colShockStart.b;
+                    sizeAttr.array[i] = Math.random() * 0.7 + 0.2;
+                }
+            }
+            
+            // Mevcut pozisyonları sıfıra çek (Patlama efekti için merkezden başlasınlar)
+            const posAttr = particlesGeometry.getAttribute('position');
+            for(let i=0; i<PARTICLE_COUNT*3; i++) {
+                posAttr.array[i] = 0; 
+            }
+            posAttr.needsUpdate = true;
+            colorAttr.needsUpdate = true;
+            sizeAttr.needsUpdate = true;
+            structIndexAttr.needsUpdate = true;
+        }
+        else {
+            // Diğer şekiller için renkleri beyaza çekip kullanıcının seçtiği rengi materyale uygula
+            resetParticleColors();
+            particlesMaterial.color.set(userSelectedColor);
+        }
+
+        if (!isDynamicShape || type === 'supernova') { 
+            const sizeAttr = particlesGeometry.getAttribute('size');
+            const structIndexAttr = particlesGeometry.getAttribute('structureIndex');
+            
+            for(let i = 0; i < PARTICLE_COUNT; i++) {
+                let pt;
+                structIndexAttr.array[i] = 0;
+
+                switch(type) {
+                    case 'dysonsphere': pt = getPointOnDysonSphere(i);
+                    sizeAttr.array[i] = (Math.random() * 1.5 + 0.5);
+                    break;
+                    case 'dnahelix': pt = getPointOnDNAHelix(i); sizeAttr.array[i] = (Math.random() * 1.5 + 0.5);
+                    break;
+                    case 'atom': pt = getPointOnAtom(i); sizeAttr.array[i] = (Math.random() * 1.5 + 0.5); break;
+                    case 'earth': pt = getPointOnEarth(i);
+                    sizeAttr.array[i] = (Math.random() * 1.5 + 0.5); break;
+                    case 'saturn': pt = getPointOnSaturn(i); break; 
+                    case 'supernova': pt = getPointOnSupernova(i);
+                    sizeAttr.array[i] = (Math.random() * 1.5 + 0.5); break; 
+                    case 'torus': pt = getPointOnTorus(i); sizeAttr.array[i] = (Math.random() * 1.5 + 0.5);
+                    break;
+                    default: pt = getPointOnSphere(i); sizeAttr.array[i] = (Math.random() * 1.5 + 0.5); break;
+                }
+                if(type !== '1987A') { // 1987A zaten yukarıda işlendi
+                    targetPositions[i*3] = pt.x;
+                    targetPositions[i*3+1] = pt.y;
+                    targetPositions[i*3+2] = pt.z;
+                }
+            }
+            sizeAttr.needsUpdate = true;
+            structIndexAttr.needsUpdate = true;
+        } else if (type === 'snowing') { 
+            for(let i = 0; i < PARTICLE_COUNT; i++) {
+                targetPositions[i*3] = 0;
+                targetPositions[i*3+1] = 0;
+                targetPositions[i*3+2] = 0;
+            }
+        }
+    }
+
+    // --- 4. Event Listeners ve Init ---
+    const colorPicker = document.getElementById('colorPicker');
+    colorPicker.addEventListener('input', (e) => {
+        userSelectedColor = e.target.value;
+        // 1987A modunda değilsek materyal rengini güncelle
+        if(currentShape !== '1987A' && !isVisualFeedbackActive) {
+            particlesMaterial.color.set(userSelectedColor);
+        }
+    });
+
+    // MASS AYARLARI EVENT LISTENERS
+    document.getElementById('mass-radius').addEventListener('input', (e) => {
+        massUniforms.radius.value = parseFloat(e.target.value);
+        document.getElementById('mass-radius-display').textContent = e.target.value;
+        if(massSphere) massSphere.scale.setScalar(massUniforms.radius.value);
+    });
+    document.getElementById('mass-height').addEventListener('input', (e) => {
+        massUniforms.planeHeight.value = parseFloat(e.target.value);
+        document.getElementById('mass-height-display').textContent = e.target.value;
+    });
+    document.getElementById('mass-bend').addEventListener('input', (e) => {
+        massUniforms.bendHeight.value = parseFloat(e.target.value);
+        document.getElementById('mass-bend-display').textContent = e.target.value;
+    });
+    document.getElementById('mass-smooth').addEventListener('input', (e) => {
+        massUniforms.smoothness.value = parseFloat(e.target.value);
+        document.getElementById('mass-smooth-display').textContent = e.target.value;
+    });
+    document.getElementById('mass-planesize').addEventListener('change', (e) => {
+        massGeomParams.planeSize = parseFloat(e.target.value);
+        document.getElementById('mass-planesize-display').textContent = e.target.value;
+        if(massPlane) {
+            massPlane.geometry.dispose();
+            massPlane.geometry = createMassPlaneGeometry(massGeomParams.planeSize, massGeomParams.planeResolution);
+        }
+    });
+    document.getElementById('mass-planeres').addEventListener('change', (e) => {
+        massGeomParams.planeResolution = parseFloat(e.target.value);
+        document.getElementById('mass-planeres-display').textContent = e.target.value;
+         if(massPlane) {
+            massPlane.geometry.dispose();
+            massPlane.geometry = createMassPlaneGeometry(massGeomParams.planeSize, massGeomParams.planeResolution);
+        }
+    });
+    document.getElementById('mass-spheredetail').addEventListener('change', (e) => {
+        massGeomParams.sphereDetail = parseFloat(e.target.value);
+        document.getElementById('mass-spheredetail-display').textContent = e.target.value;
+        if(massSphere) {
+            massSphere.geometry.dispose();
+            massSphere.geometry = createMassSphereGeometry(massGeomParams.sphereDetail);
+        }
+    });
+    
+    // BAŞLANGIÇTA SPHERE
+    setShape('sphere');
+    
+    function toggleColorPanel() {
+        const panel = document.getElementById('color-picker-panel');
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) {
+            document.getElementById('settings-panel').classList.add('hidden');
+        }
+    }
+    window.toggleColorPanel = toggleColorPanel;
+
+    function toggleSettingsPanel() {
+        const panel = document.getElementById('settings-panel');
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) {
+            document.getElementById('color-picker-panel').classList.add('hidden');
+        }
+    }
+    window.toggleSettingsPanel = toggleSettingsPanel;
+    
+    const videoElement = document.getElementById('input_video');
+    const loadingDiv = document.getElementById('loading');
+    const toggleCameraButton = document.getElementById('btn-toggle-camera');
+
+    function startGame() {
+        const startPanel = document.getElementById('start-button-container');
+        const startButtonPng = document.getElementById('start-button-png');
+        const templateButtons = document.getElementById('template-buttons');
+        const colorPanel = document.getElementById('color-picker-panel');
+        const settingsPanel = document.getElementById('settings-panel'); 
+        
+        startButtonPng.src = 'assets/icons/switchon.png';
+        startButtonPng.alt = 'Simülasyon Başladı';
+        startButtonPng.title = 'Simülasyon Başladı';
+
+        startPanel.style.opacity = '0';
+        
+        setTimeout(() => {
+            startPanel.style.display = 'none';
+            templateButtons.classList.remove('initially-hidden');
+            colorPanel.classList.remove('initially-hidden');
+            settingsPanel.classList.remove('initially-hidden'); 
+            colorPanel.classList.add('hidden'); 
+            settingsPanel.classList.add('hidden'); 
+        }, 500);
+        
+        document.getElementById('setting-mouse-sensitivity').value = rotationSensitivity;
+        document.getElementById('setting-hand-sensitivity').value = handRotationSensitivity;
+        document.getElementById('mouse-sens-display').textContent = rotationSensitivity;
+        document.getElementById('hand-sens-display').textContent = handRotationSensitivity;
+    }
+    window.startGame = startGame;
+    
+    function returnToStartScreen() {
+        const startPanel = document.getElementById('start-button-container');
+        const startButtonPng = document.getElementById('start-button-png');
+        const templateButtons = document.getElementById('template-buttons');
+        const colorPanel = document.getElementById('color-picker-panel');
+        const settingsPanel = document.getElementById('settings-panel'); 
+        
+        stopCameraControl();
+
+        startButtonPng.src = 'assets/icons/switchoff.png';
+        startButtonPng.alt = 'Başlatma Butonu';
+        startButtonPng.title = 'Simülasyonu Başlat';
+        
+        templateButtons.classList.add('initially-hidden');
+        colorPanel.classList.add('initially-hidden');
+        settingsPanel.classList.add('initially-hidden'); 
+        loadingDiv.classList.add('initially-hidden');
+        
+        startPanel.style.display = 'flex'; 
+        setTimeout(() => {
+             startPanel.style.opacity = '1'; 
+        }, 10);
+    }
+    window.returnToStartScreen = returnToStartScreen;
+    
+    document.getElementById('setting-mouse-sensitivity').addEventListener('input', (e) => {
+        rotationSensitivity = parseFloat(e.target.value);
+        document.getElementById('mouse-sens-display').textContent = rotationSensitivity;
+    });
+    
+    document.getElementById('setting-hand-sensitivity').addEventListener('input', (e) => {
+        handRotationSensitivity = parseFloat(e.target.value);
+        document.getElementById('hand-sens-display').textContent = handRotationSensitivity;
+    });
+
+    // Helper: Koordinata göre Ripple (Dalga) oluşturur (x ve y 0 ile 1 arasında olmalıdır)
+    function triggerRipple(x, y) {
+        if (currentShape !== 'shockwave' && currentShape !== 'supernova') return;
+        
+        const center = new THREE.Vector2(x, y);
+        const startTime = performance.now() / 1000;
+        
+        ripples.push({ center, startTime });
+        if (ripples.length > maxRipples) {
+            ripples.shift();
+        }
+    }
+
+    // --- YENİ GÜNCELLENMİŞ MEDIAPIPE MANTIĞI ---
+
+    function onResults(results) { 
+        loadingDiv.style.display = 'none';
+        
+        let handsCount = (results.multiHandLandmarks && results.multiHandLandmarks.length) || 0;
+        const now = Date.now();
+
+        if (handsCount > 0) {
+            isHandDetected = true;
+            isSingleHand = true;
+            const landmarks = results.multiHandLandmarks[0];
+            
+            const fingers = getFingerStates(landmarks);
+            const isThumbOpen = Math.abs(landmarks[4].x - landmarks[17].x) > 0.15; 
+            
+            const handSize = distance(landmarks[0], landmarks[9]);
+            targetScale = Math.max(0.5, Math.min(3, handSize * 8)); 
+
+            const pinchDist = distance(landmarks[4], landmarks[8]);
+            const isIndexPinching = pinchDist < 0.05;
+
+            const middlePinchDist = distance(landmarks[4], landmarks[12]);
+            const isMiddlePinching = middlePinchDist < 0.05;
+
+            // YENİ: Yüzük parmağı pinch (Ring Finger Pinch)
+            const ringPinchDist = distance(landmarks[4], landmarks[16]);
+            const isRingPinching = ringPinchDist < 0.05;
+
+            const isFist = !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky;
+            const isDoubleClickGesture = fingers.index && fingers.middle && !fingers.ring && !fingers.pinky;
+            const isClickGesture = fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky;
+
+            if (isFist) {
+                rotationYVelocity = 0;
+                rotationXVelocity = 0;
+                rotationZVelocity = 0;
+                if(isVisualFeedbackActive && currentShape !== '1987A') {
+                    particlesMaterial.color.set(userSelectedColor);
+                    isVisualFeedbackActive = false;
+                }
+            }
+            else if (isDoubleClickGesture) {
+                if(currentShape !== '1987A') { // 1987A'da rengi bozma
+                    particlesMaterial.color.setHex(0xFFFFFF);
+                    isVisualFeedbackActive = true;
+                }
+                
+                // --- SHOCKWAVE / SUPERNOVA TETİKLEME ---
+                if (currentShape === 'shockwave' || currentShape === 'supernova') {
+                    // 400ms cooldown (sürekli tetiklenmeyi önlemek için)
+                    if (now - lastShockwaveTime > 400) {
+                        // Elin ortasını (9. nokta) referans alıyoruz
+                        // MediaPipe x ve y değerleri 0 ile 1 arasındadır.
+                        // Ancak MediaPipe Y ekseni yukarıdan aşağıyadır (0=top, 1=bottom).
+                        // Shader ise 0=bottom bekliyor (uv.y).
+                        // Bu yüzden 1.0 - y yapıyoruz.
+                        triggerRipple(landmarks[9].x, 1.0 - landmarks[9].y);
+                        lastShockwaveTime = now;
+                    }
+                }
+                // ---------------------------
+                
+                rotationYVelocity = 0;
+                rotationXVelocity = 0;
+                rotationZVelocity = 0;
+            }
+            else if (isClickGesture) {
+                if(currentShape !== '1987A') { // 1987A'da rengi bozma
+                    particlesMaterial.color.setHex(0xFF0000);
+                    isVisualFeedbackActive = true;
+                }
+                rotationYVelocity = 0;
+                rotationXVelocity = 0;
+                rotationZVelocity = 0;
+            }
+            else if (isIndexPinching) {
+                 if (now - lastPinchTime > TEMPLATE_COOLDOWN_TIME) {
+                    templateIndex = (templateIndex + 1) % TEMPLATES.length;
+                    setShape(TEMPLATES[templateIndex]);
+                    playClickSound();
+                    lastPinchTime = now;
+                    if(isVisualFeedbackActive && currentShape !== '1987A') {
+                        particlesMaterial.color.set(userSelectedColor);
+                        isVisualFeedbackActive = false;
+                    }
+                 }
+                 rotationYVelocity = 0;
+                 rotationXVelocity = 0;
+                 rotationZVelocity = 0;
+            }
+            else if (isMiddlePinching) {
+                 if (now - lastPinchTime > TEMPLATE_COOLDOWN_TIME) {
+                    templateIndex = (templateIndex - 1 + TEMPLATES.length) % TEMPLATES.length;
+                    setShape(TEMPLATES[templateIndex]);
+                    playClickSound();
+                    lastPinchTime = now;
+                    if(isVisualFeedbackActive && currentShape !== '1987A') {
+                        particlesMaterial.color.set(userSelectedColor);
+                        isVisualFeedbackActive = false;
+                    }
+                 }
+                 rotationYVelocity = 0;
+                 rotationXVelocity = 0;
+                 rotationZVelocity = 0;
+            }
+            // YENİ: Ring Pinch ile Z ekseni kontrolü
+            else if (isRingPinching) {
+                const xDiff = landmarks[9].x - landmarks[0].x;
+                const deadZone = 0.04; 
+
+                if (xDiff > deadZone) {
+                    rotationZVelocity = -0.03; 
+                    rotationXVelocity = 0;
+                    rotationYVelocity = 0;
+                } else if (xDiff < -deadZone) {
+                    rotationZVelocity = 0.03; 
+                    rotationXVelocity = 0;
+                    rotationYVelocity = 0;
+                } else {
+                    rotationZVelocity = 0;
+                }
+
+                if(isVisualFeedbackActive && currentShape !== '1987A') {
+                    particlesMaterial.color.set(userSelectedColor);
+                    isVisualFeedbackActive = false;
+                }
+            }
+            else {
+                if(isVisualFeedbackActive && currentShape !== '1987A') {
+                    particlesMaterial.color.set(userSelectedColor);
+                    isVisualFeedbackActive = false;
+                }
+
+                const xDiff = landmarks[9].x - landmarks[0].x;
+                const deadZone = 0.04; 
+
+                rotationZVelocity = 0; // Normal modda Z'yi sıfırla
+
+                if (xDiff > deadZone) {
+                    rotationYVelocity = -0.03; 
+                    rotationXVelocity = 0;
+                } else if (xDiff < -deadZone) {
+                    rotationYVelocity = 0.03; 
+                    rotationXVelocity = 0;
+                } else {
+                    rotationYVelocity = 0;
+                    rotationXVelocity = 0;
+                }
+            }
+
+        } else {
+            isHandDetected = false;
+            isSingleHand = false;
+            targetScale = 1.0; 
+            if(isVisualFeedbackActive && currentShape !== '1987A') {
+                particlesMaterial.color.set(userSelectedColor);
+                isVisualFeedbackActive = false;
+            }
+        }
+    } 
+
+    const hands = new Hands({
+        locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }
+    });
+    
+    hands.setOptions({
+        maxNumHands: 1, 
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+    
+    hands.onResults(onResults);
+    
+    function startCameraControl() {
+        if (isCameraControlEnabled && cam) return; 
+
+        loadingDiv.style.display = 'block';
+        loadingDiv.classList.remove('initially-hidden');
+        toggleCameraButton.classList.add('active');
+        isCameraControlEnabled = true;
+
+        cam = new Camera(videoElement, { 
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 640, 
+            height: 480
+        });
+        cam.start();
+    }
+
+    function stopCameraControl() {
+        if (cam) {
+            cam.stop();
+            cam = null;
+        }
+        isCameraControlEnabled = false;
+        isHandDetected = false; 
+        isSingleHand = false;
+        targetScale = 1.0; 
+        currentScale = 1.0; 
+        particleSystem.scale.set(1, 1, 1);
+        loadingDiv.style.display = 'none';
+        loadingDiv.classList.add('initially-hidden');
+        toggleCameraButton.classList.remove('active');
+        if(currentShape !== '1987A') {
+            particlesMaterial.color.set(userSelectedColor); 
+        }
+    }
+
+    function toggleCameraControl() {
+        if (isCameraControlEnabled) {
+            stopCameraControl();
+        } else {
+            startCameraControl();
+        }
+    }
+    window.toggleCameraControl = toggleCameraControl;
+
+
+    // --- 5, 6, 7. Mouse/Touch Kontrolleri ---
+    let previousMousePosition = { x: 0, y: 0 };
+    
+
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    window.addEventListener('dblclick', (event) => {
+        if (currentShape !== 'shockwave' && currentShape !== 'supernova') return;
+
+        // Mouse piksel değerini 0-1 arasına çeviriyoruz
+        const x = event.clientX / window.innerWidth;
+        const y = event.clientY / window.innerHeight;
+        
+        // Mouse clickY yukarıdan aşağıya (0->1). 
+        // Ancak bizim orijinal mouse mantığımız ve shader yapımız Y'yi ters çeviriyordu.
+        // Orijinal kodda: mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+        // center.y = (mouseY + 1) / 2 = 1 - (clientY/height).
+        // Yani shader 0'ı alt köşe kabul ediyor (standart GL).
+        // triggerRipple(x, 1-y) çağırıyoruz.
+        triggerRipple(x, 1.0 - y);
+    });
+
+    document.addEventListener('mousedown', (e) => {
+        if (isCameraControlEnabled) return; 
+
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+
+        if (e.button === 0) { 
+            isDragging = true;
+            document.body.style.cursor = 'grabbing';
+            rotationXVelocity = 0;
+            rotationYVelocity = 0;
+            rotationZVelocity = 0;
+        }
+
+        if (e.button === 2) { 
+            isRMBInteraction = true;
+            if (currentShape !== 'snowing') { 
+                document.body.style.cursor = 'ns-resize';
+            } else {
+                document.body.style.cursor = 'default';
+             for(let i = 0; i < PARTICLE_COUNT * 3; i++) {
+                    explosionVelocities[i] = 0;
+           }
+            }
+         }
+    });
+    document.addEventListener('mouseup', (e) => {
+        if (isCameraControlEnabled) return;
+        isDragging = false;
+        isRMBInteraction = false;
+        document.body.style.cursor = 'default';
+
+        if (e.button === 2 && currentShape === 'snowing') { 
+            initExplosionVelocities();
+        }
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (isCameraControlEnabled) return;
+
+        const deltaMove = { x: e.clientX - previousMousePosition.x, y: e.clientY - previousMousePosition.y };
+
+        if(isDragging) {
+            // YENİ: Ctrl tuşu basılıysa Z ekseni (Roll) dönüşü yap
+            if (e.ctrlKey) {
+                rotationZVelocity = deltaMove.x * rotationSensitivity;
+                rotationXVelocity = 0;
+                rotationYVelocity = 0;
+            } else {
+                rotationYVelocity = deltaMove.x * rotationSensitivity;
+                rotationXVelocity = deltaMove.y * rotationSensitivity;
+                rotationZVelocity = 0;
+            }
+            
+            if(currentShape === 'shockwave') {
+                 shockwaveGroup.rotation.y += rotationYVelocity;
+                 shockwaveGroup.rotation.x += rotationXVelocity;
+                 shockwaveGroup.rotation.z += rotationZVelocity; // Eklendi
+            } else if (currentShape === 'mass') {
+                 massGroup.rotation.y += rotationYVelocity;
+                 massGroup.rotation.x += rotationXVelocity;
+                 massGroup.rotation.z += rotationZVelocity; // Eklendi
+            } else {
+                particleSystem.rotation.y += rotationYVelocity;
+                particleSystem.rotation.x += rotationXVelocity;
+                particleSystem.rotation.z += rotationZVelocity; // Eklendi
+            }
+        }
+
+        if(isRMBInteraction && currentShape !== 'snowing') { 
+            const zoomSensitivity = 0.1;
+            let minZ = 5, maxZ = 100;
+            if(currentShape === 'mass') maxZ = 200;
+
+            let newZ = camera.position.z - (deltaMove.y * zoomSensitivity);
+            
+            if(currentShape === 'mass') {
+                 const vec = camera.position.clone();
+                 let len = vec.length();
+                 len -= deltaMove.y * zoomSensitivity;
+                 if(len < 5) len = 5; if(len > 200) len = 200;
+                 vec.setLength(len);
+                 camera.position.copy(vec);
+            } else {
+                if(newZ < 5) newZ = 5;
+                if(newZ > 100) newZ = 100;
+                camera.position.z = newZ;
+            }
+        }
+
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+    
+    let prevTouchDistance = 0;
+    let isTouchDragging = false; 
+    let isThreeFingerInteraction = false; 
+
+    function getDistance(touches) {
+        return Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
+    }
+
+    document.addEventListener('touchstart', (e) => {
+        if (isCameraControlEnabled) return; 
+
+        if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            previousMousePosition = { x: touch.pageX, y: touch.pageY };
+            isTouchDragging = true;
+            isThreeFingerInteraction = false; 
+            rotationXVelocity = 0;
+            rotationYVelocity = 0;
+            rotationZVelocity = 0;
+        } else if (e.touches.length === 2) {
+            prevTouchDistance = getDistance(e.touches);
+            isTouchDragging = false; 
+            isThreeFingerInteraction = false; 
+        } else if (e.touches.length === 3) {
+            isThreeFingerInteraction = true;
+            isTouchDragging = false;
+            if (currentShape === 'snowing') {
+             for(let i = 0; i < PARTICLE_COUNT * 3; i++) {
+                    explosionVelocities[i] = 0;
+                }
+            }
+        }
+    }, { passive: true });
+    document.addEventListener('touchmove', (e) => {
+        if (isCameraControlEnabled) return;
+
+        if (e.touches.length === 1 && isTouchDragging) {
+            const touch = e.touches[0];
+            const deltaMove = { x: touch.pageX - previousMousePosition.x, y: touch.pageY - previousMousePosition.y };
+            rotationYVelocity = deltaMove.x * rotationSensitivity * 3; 
+            rotationXVelocity = deltaMove.y * rotationSensitivity * 3;
+            rotationZVelocity = 0;
+            
+            if(currentShape === 'shockwave') {
+                 shockwaveGroup.rotation.y += rotationYVelocity;
+                 shockwaveGroup.rotation.x += rotationXVelocity;
+            } else if (currentShape === 'mass') {
+                 massGroup.rotation.y += rotationYVelocity;
+                 massGroup.rotation.x += rotationXVelocity;
+            } else {
+                particleSystem.rotation.y += rotationYVelocity;
+                particleSystem.rotation.x += rotationXVelocity;
+            }
+            
+            previousMousePosition = { x: touch.pageX, y: touch.pageY };
+        } else if (e.touches.length === 2) {
+            const currentTouchDistance = getDistance(e.touches);
+            const zoomFactor = 0.05; 
+            const deltaDistance = currentTouchDistance - prevTouchDistance;
+            
+            if (currentShape === 'mass') {
+                 const vec = camera.position.clone();
+                 let len = vec.length();
+                 len -= deltaDistance * zoomFactor;
+                 if(len < 5) len = 5; if(len > 200) len = 200;
+                 vec.setLength(len);
+                 camera.position.copy(vec);
+            } else {
+                let newZ = camera.position.z - (deltaDistance * zoomFactor);
+                if (newZ < 5) newZ = 5;
+                if (newZ > 100) newZ = 100;
+                camera.position.z = newZ;
+            }
+            prevTouchDistance = currentTouchDistance;
+        }
+    }, { passive: false });
+    document.addEventListener('touchend', (e) => {
+        if (isCameraControlEnabled) return;
+        isTouchDragging = false;
+        if (e.touches.length < 3 && isThreeFingerInteraction) {
+            isThreeFingerInteraction = false;
+            if (currentShape === 'snowing') { 
+                initExplosionVelocities();
+            }
+        }
+    });
+
+    // --- RIPPLE UPDATE YARDIMCISI ---
+    function updateRippleUniforms() {
+        if (!ripplePass) return;
+        const centers = ripplePass.uniforms.centers.value;
+        const times = ripplePass.uniforms.times.value;
+        const active = ripplePass.uniforms.rippleActive.value;
+        for (let i = 0; i < maxRipples; i++) {
+            if (i < ripples.length) {
+                centers[i].copy(ripples[i].center);
+                times[i] = performance.now() / 1000 - ripples[i].startTime;
+                active[i] = times[i] < rippleDuration ? 1.0 : 0.0;
+            } else {
+                active[i] = 0.0;
+            }
+        }
+    }
+
+    // --- 8. ANİMASYON DÖNGÜSÜ ---
+    let clock = new THREE.Clock();
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // --- A) SHOCKWAVE MODU ---
+        if (currentShape === 'shockwave' && isShockwaveInit) {
+            if (isCameraControlEnabled) {
+                currentScale += (targetScale - currentScale) * 0.1; 
+                shockwaveGroup.scale.set(currentScale, currentScale, currentScale);
+
+                if (isHandDetected) {
+                    shockwaveGroup.rotation.y += rotationYVelocity;
+                    shockwaveGroup.rotation.x += rotationXVelocity;
+                    shockwaveGroup.rotation.z += rotationZVelocity; // Eklendi
+                } else {
+                    rotationYVelocity *= ROTATION_DAMPING;
+                    rotationXVelocity *= ROTATION_DAMPING;
+                    rotationZVelocity *= ROTATION_DAMPING; // Eklendi
+                    shockwaveGroup.rotation.y += rotationYVelocity;
+                    shockwaveGroup.rotation.x += rotationXVelocity;
+                    shockwaveGroup.rotation.z += rotationZVelocity; // Eklendi
+                }
+            } 
+            else {
+                if (!isDragging && !isTouchDragging) {
+                    rotationYVelocity *= ROTATION_DAMPING;
+                    rotationXVelocity *= ROTATION_DAMPING;
+                    rotationZVelocity *= ROTATION_DAMPING; // Eklendi
+                    shockwaveGroup.rotation.y += rotationYVelocity;
+                    shockwaveGroup.rotation.x += rotationXVelocity;
+                    shockwaveGroup.rotation.z += rotationZVelocity; // Eklendi
+                }
+                shockwaveGroup.scale.set(1, 1, 1);
+            }
+
+            if (ripples.length > 0) {
+                updateRippleUniforms();
+                ripples = ripples.filter(ripple => (performance.now() / 1000 - ripple.startTime) < rippleDuration);
+            }
+            composer.render();
+            return; 
+        }
+
+        // --- B) MASS MODU ---
+        if (currentShape === 'mass' && isMassInit) {
+            let t = clock.getElapsedTime() * 0.5;
+            
+            if (massSphere && massSphere.userData) {
+                let pPrev = massSphere.userData.posPrev;
+                let pNext = massSphere.userData.posNext;
+                let rotAxis = massSphere.userData.rotAxis;
+                let dist = massSphere.userData.dist;
+                
+                setMassSpherePosition(massSphere.position, t);
+                setMassSpherePosition(pNext, t + 0.001);
+                rotAxis.subVectors(pNext, massSphere.position);
+                rotAxis.set(rotAxis.z, 0, -rotAxis.x).normalize();
+                
+                let d = dist.subVectors(massSphere.position, pPrev).length();
+                let dFull = 2 * Math.PI * massUniforms.radius.value;
+                let aRatio = d / dFull;
+                let a = Math.PI * 2 * aRatio;
+                    
+                massSphere.rotateOnWorldAxis(rotAxis, a);
+                pPrev.copy(massSphere.position);
+                
+                massUniforms.spherePosition.value.copy(massSphere.position);
+            }
+
+            if (isCameraControlEnabled) {
+                currentScale += (targetScale - currentScale) * 0.1; 
+                massGroup.scale.set(currentScale, currentScale, currentScale);
+
+                if (isHandDetected) {
+                    massGroup.rotation.y += rotationYVelocity;
+                    massGroup.rotation.x += rotationXVelocity;
+                    massGroup.rotation.z += rotationZVelocity; // Eklendi
+                } else {
+                    rotationYVelocity *= ROTATION_DAMPING;
+                    rotationXVelocity *= ROTATION_DAMPING;
+                    rotationZVelocity *= ROTATION_DAMPING; // Eklendi
+                    massGroup.rotation.y += rotationYVelocity;
+                    massGroup.rotation.x += rotationXVelocity;
+                    massGroup.rotation.z += rotationZVelocity; // Eklendi
+                }
+            } else {
+                 if (!isDragging && !isTouchDragging) {
+                    rotationYVelocity *= ROTATION_DAMPING;
+                    rotationXVelocity *= ROTATION_DAMPING;
+                    rotationZVelocity *= ROTATION_DAMPING; // Eklendi
+                    massGroup.rotation.y += rotationYVelocity;
+                    massGroup.rotation.x += rotationXVelocity;
+                    massGroup.rotation.z += rotationZVelocity; // Eklendi
+                }
+                massGroup.scale.set(1, 1, 1);
+            }
+
+            renderer.render(scene, camera);
+            return;
+        }
+
+
+        // --- C) NORMAL PARÇACIK MODU ---
+        const delta = clock.getDelta();
+        const time = clock.elapsedTime;
+        
+        const posAttr = particlesGeometry.getAttribute('position');
+        const sizeAttr = particlesGeometry.getAttribute('size');
+        const structIndexAttr = particlesGeometry.getAttribute('structureIndex'); 
+        const colorAttr = particlesGeometry.getAttribute('color');
+
+        const isConcentrating = (currentShape === 'snowing' && isRMBInteraction && !isCameraControlEnabled) ||
+        (currentShape === 'snowing' && isThreeFingerInteraction && !isCameraControlEnabled);
+
+        if (isConcentrating) { 
+            for(let i = 0; i < PARTICLE_COUNT; i++) {
+                const x_idx = i * 3;
+                const y_idx = i * 3 + 1;
+                const z_idx = i * 3 + 2;
+                posAttr.array[x_idx] *= (1 - CONCENTRATION_SPEED);
+                posAttr.array[y_idx] *= (1 - CONCENTRATION_SPEED);
+                posAttr.array[z_idx] *= (1 - CONCENTRATION_SPEED);
+            }
+            posAttr.needsUpdate = true;
+        } else if (currentShape === 'snowing' && !isRMBInteraction && !isThreeFingerInteraction && !isCameraControlEnabled) { 
+            const EXPLOSION_SPEED = 0.3;
+            const EXPLOSION_BOUNDARY_SQUARED = 50 * 50; 
+            
+            for(let i = 0; i < PARTICLE_COUNT; i++) {
+                const x_idx = i * 3;
+                const y_idx = i * 3 + 1;
+                const z_idx = i * 3 + 2;
+                posAttr.array[x_idx] += explosionVelocities[x_idx] * EXPLOSION_SPEED;
+                posAttr.array[y_idx] += explosionVelocities[y_idx] * EXPLOSION_SPEED;
+                posAttr.array[z_idx] += explosionVelocities[z_idx] * EXPLOSION_SPEED;
+                const distSq = posAttr.array[x_idx]**2 + posAttr.array[y_idx]**2 + posAttr.array[z_idx]**2;
+                if (distSq > EXPLOSION_BOUNDARY_SQUARED) {
+                    posAttr.array[x_idx] = (Math.random() - 0.5) * 5;
+                    posAttr.array[y_idx] = (Math.random() - 0.5) * 5;
+                    posAttr.array[z_idx] = (Math.random() - 0.5) * 5;
+                    const vector = new THREE.Vector3( (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2 );
+                    vector.normalize().multiplyScalar(Math.random() * 0.5 + 0.5); 
+                    explosionVelocities[x_idx] = vector.x;
+                    explosionVelocities[y_idx] = vector.y;
+                    explosionVelocities[z_idx] = vector.z;
+                }
+            }
+            posAttr.needsUpdate = true;
+        } else {
+            const lerpSpeed = 5 * delta;
+            
+            if (currentShape === '1987A') {
+                const t = time - SN1987A_startTime;
+                
+                let shockRadius = 0;
+                if(t < 10) {
+                    shockRadius = 10.0 + t * 6.0;
+                } else {
+                    shockRadius = 70.0 + (t - 10.0) * 0.5;
+                }
+
+                let colorMix = 0;
+                if (t > 3) colorMix = Math.min(1.0, (t - 3.0) / 7.0);
+
+                const sR1 = 0.48, sG1 = 0.81, sB1 = 1.0; 
+                const sR2 = 0.71, sG2 = 0.55, sB2 = 1.0; 
+
+                const ringPulse = 1.0 + 0.02 * Math.sin(time * 1.5);
+                const coreJitter = 0.05 * Math.sin(time * 10.0);
+
+                let globalAlpha = 1.0;
+                if(t < 1.0) globalAlpha = t; 
+
+                for(let i = 0; i < PARTICLE_COUNT; i++) {
+                    const idx = i * 3;
+                    const struct = structIndexAttr.array[i];
+                    
+                    const tx = targetPositions[idx];
+                    const ty = targetPositions[idx+1];
+                    const tz = targetPositions[idx+2];
+                    
+                    let fx, fy, fz; 
+
+                    if (struct === 1) { 
+                        const noise = 1.0 + coreJitter + 0.03 * Math.sin(idx + time * 5.0);
+                        fx = tx * noise;
+                        fy = ty * noise;
+                        fz = tz * noise;
+                        
+                        posAttr.array[idx]   += (fx - posAttr.array[idx]) * 0.1;
+                        posAttr.array[idx+1] += (fy - posAttr.array[idx+1]) * 0.1;
+                        posAttr.array[idx+2] += (fz - posAttr.array[idx+2]) * 0.1;
+
+                    } else if (struct === 2) { 
+                        if (t < 2.0) {
+                            const expansion = Math.min(1.0, t * 0.5); 
+                            fx = tx * expansion * ringPulse;
+                            fy = ty * expansion * ringPulse;
+                            fz = tz * expansion * ringPulse;
+                        } else {
+                            fx = tx * ringPulse;
+                            fy = ty * ringPulse;
+                            fz = tz * ringPulse;
+                        }
+
+                        posAttr.array[idx]   += (fx - posAttr.array[idx]) * 0.05;
+                        posAttr.array[idx+1] += (fy - posAttr.array[idx+1]) * 0.05;
+                        posAttr.array[idx+2] += (fz - posAttr.array[idx+2]) * 0.05;
+                        
+                    } else if (struct === 3) { 
+                        let expansion = 1.0;
+                        if(t < 3.0) expansion = Math.max(0, (t - 1.0) * 0.5);
+                        
+                        fx = tx * expansion;
+                        fy = ty * expansion;
+                        fz = tz * expansion;
+
+                        posAttr.array[idx]   += (fx - posAttr.array[idx]) * 0.05;
+                        posAttr.array[idx+1] += (fy - posAttr.array[idx+1]) * 0.05;
+                        posAttr.array[idx+2] += (fz - posAttr.array[idx+2]) * 0.05;
+
+                    } else if (struct === 4) { 
+                        fx = tx * shockRadius;
+                        fy = ty * shockRadius;
+                        fz = tz * shockRadius;
+                        
+                        posAttr.array[idx]   = fx;
+                        posAttr.array[idx+1] = fy;
+                        posAttr.array[idx+2] = fz;
+                        
+                        if (t > 3.0) {
+                            colorAttr.array[idx]   = sR1 * (1 - colorMix) + sR2 * colorMix;
+                            colorAttr.array[idx+1] = sG1 * (1 - colorMix) + sG2 * colorMix;
+                            colorAttr.array[idx+2] = sB1 * (1 - colorMix) + sB2 * colorMix;
+                        }
+                    }
+                }
+                
+                colorAttr.needsUpdate = true;
+                particlesMaterial.opacity = Math.max(0.4, 1.0 - (t * 0.02));
+
+            } else {
+                for(let i = 0; i < PARTICLE_COUNT * 3; i++) {
+                    posAttr.array[i] += (targetPositions[i] - posAttr.array[i]) * lerpSpeed;
+                }
+                particlesMaterial.opacity = 0.9; 
+            }
+            posAttr.needsUpdate = true;
+
+            if (isCameraControlEnabled) {
+                currentScale += (targetScale - currentScale) * 0.1; 
+                particleSystem.scale.set(currentScale, currentScale, currentScale); 
+                
+                if (isHandDetected) {
+                    particleSystem.rotation.y += rotationYVelocity;
+                    particleSystem.rotation.x += rotationXVelocity;
+                    particleSystem.rotation.z += rotationZVelocity; // Eklendi
+                } else {
+                    rotationYVelocity *= ROTATION_DAMPING;
+                    rotationXVelocity *= ROTATION_DAMPING;
+                    rotationZVelocity *= ROTATION_DAMPING; // Eklendi
+                    particleSystem.rotation.y += rotationYVelocity;
+                    particleSystem.rotation.x += rotationXVelocity;
+                    particleSystem.rotation.z += rotationZVelocity; // Eklendi
+                }
+            } else {
+                if (!isDragging && !isTouchDragging) { 
+                    rotationYVelocity *= ROTATION_DAMPING;
+                    rotationXVelocity *= ROTATION_DAMPING;
+                    rotationZVelocity *= ROTATION_DAMPING; // Eklendi
+                    particleSystem.rotation.y += rotationYVelocity;
+                    particleSystem.rotation.x += rotationXVelocity;
+                    particleSystem.rotation.z += rotationZVelocity; // Eklendi
+                    particleSystem.scale.set(1, 1, 1);
+                } else {
+                    particleSystem.scale.set(1, 1, 1);
+                }
+            }
+            
+            if(currentShape !== 'saturn') {
+                particlesMaterial.size = (currentShape === 'atom') ? 0.1 : 0.2;
+            } else if (currentShape === 'saturn') {
+                particlesMaterial.size = 0.15;
+            }
+        }
+        
+        particleSystem.position.y = Math.sin(time * 0.3) * 0.5;
+        
+        // --- RENDER ---
+        // Supernova için Post-Processing Ripple Efektini Çalıştır
+        if (currentShape === 'supernova' && isShockwaveInit) {
+            if (ripples.length > 0) {
+                updateRippleUniforms();
+                ripples = ripples.filter(ripple => (performance.now() / 1000 - ripple.startTime) < rippleDuration);
+            }
+            composer.render();
+        } else {
+            renderer.render(scene, camera);
+        }
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        if(composer) composer.setSize(window.innerWidth, window.innerHeight);
+        if(bloomPass) bloomPass.setSize(window.innerWidth, window.innerHeight);
+        if(ripplePass) ripplePass.uniforms.aspect.value = window.innerWidth / window.innerHeight;
+    });
+
+    // --- YENİ EKLENEN KODLAR ---
+    
+    // 1. UI elementlerine tıklanınca sahnenin dönmesini/hareket etmesini engellemek için
+    const uiElements = document.querySelectorAll('#settings-panel, #color-picker-panel, #template-buttons');
+    uiElements.forEach(el => {
+        el.addEventListener('mousedown', (e) => e.stopPropagation());
+        el.addEventListener('touchstart', (e) => e.stopPropagation());
+        el.addEventListener('pointerdown', (e) => e.stopPropagation());
+        el.addEventListener('wheel', (e) => e.stopPropagation());
+    });
+
+    // 2. UI Opacity Ayarı Mantığı
+    const opacitySlider = document.getElementById('setting-ui-opacity');
+    const uiOpacityDisplay = document.getElementById('ui-opacity-display');
+    
+    opacitySlider.addEventListener('input', (e) => {
+        const val = e.target.value;
+        uiOpacityDisplay.textContent = val;
+        
+        const settingsPanel = document.getElementById('settings-panel');
+        const colorPanel = document.getElementById('color-picker-panel');
+        const btnPanel = document.getElementById('template-buttons');
+
+        settingsPanel.style.background = `linear-gradient(135deg, rgba(20, 20, 20, ${val}), rgba(10, 10, 10, ${val}))`;
+        colorPanel.style.background = `linear-gradient(135deg, rgba(20, 20, 20, ${val}), rgba(10, 10, 10, ${val}))`;
+        btnPanel.style.background = `rgba(10, 10, 10, ${val})`; 
+    });
+    
+    animate();
+</script>
+</body>
+</html>
