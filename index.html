@@ -1,5 +1,3 @@
-<!-- --- START OF FILE lastonline - Supernova Ripple Update.html --- -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -460,8 +458,8 @@ if ('serviceWorker' in navigator) {
     const menuSound = new Audio('assets/sounds/menu.mp3'); 
     
     hoverSound.volume = 0.5; 
-    clickSound.volume = 0.4;
-    menuSound.volume = 0.2; 
+    clickSound.volume = 0.7;
+    menuSound.volume = 0.5; 
 
     function playHoverSound() {
         hoverSound.currentTime = 0; 
@@ -514,6 +512,43 @@ if ('serviceWorker' in navigator) {
         planeResolution: 100,
         sphereDetail: 7
     };
+
+    // --- YENİ EKLENEN: Mass Ayarlarını Kaydetme ve Yükleme ---
+    const MASS_SETTINGS_KEY = 'pro_mouse_particles_mass_settings';
+
+    function loadMassSettings() {
+        const saved = localStorage.getItem(MASS_SETTINGS_KEY);
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.radius !== undefined) massUniforms.radius.value = data.radius;
+                if (data.planeHeight !== undefined) massUniforms.planeHeight.value = data.planeHeight;
+                if (data.bendHeight !== undefined) massUniforms.bendHeight.value = data.bendHeight;
+                if (data.smoothness !== undefined) massUniforms.smoothness.value = data.smoothness;
+                if (data.planeSize !== undefined) massGeomParams.planeSize = data.planeSize;
+                if (data.planeResolution !== undefined) massGeomParams.planeResolution = data.planeResolution;
+                if (data.sphereDetail !== undefined) massGeomParams.sphereDetail = data.sphereDetail;
+            } catch (e) {
+                console.warn("Mass settings could not be loaded:", e);
+            }
+        }
+    }
+    
+    // Sayfa açılır açılmaz ayarları yükle
+    loadMassSettings();
+
+    function saveMassSettings() {
+        const data = {
+            radius: massUniforms.radius.value,
+            planeHeight: massUniforms.planeHeight.value,
+            bendHeight: massUniforms.bendHeight.value,
+            smoothness: massUniforms.smoothness.value,
+            planeSize: massGeomParams.planeSize,
+            planeResolution: massGeomParams.planeResolution,
+            sphereDetail: massGeomParams.sphereDetail
+        };
+        localStorage.setItem(MASS_SETTINGS_KEY, JSON.stringify(data));
+    }
 
     // --- SHOCKWAVE DEĞİŞKENLERİ ---
     let shockwaveGroup = new THREE.Group();
@@ -700,6 +735,30 @@ if ('serviceWorker' in navigator) {
     function initMassScene() {
         if(isMassInit) return;
         
+        // --- STARS FOR MASS MODE ---
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 6000;
+        const starPositions = new Float32Array(starCount * 3);
+
+        for(let i = 0; i < starCount * 3; i++) {
+            // -200 ile 200 arasında rastgele pozisyonlar
+            starPositions[i] = (Math.random() - 0.5) * 400; 
+        }
+
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+
+        const starMaterial = new THREE.PointsMaterial({
+            size: 0.2, 
+            color: 0xffffff, 
+            transparent: true,
+            opacity: 0.8,
+            sizeAttenuation: true 
+        });
+
+        const massStars = new THREE.Points(starGeometry, starMaterial);
+        massGroup.add(massStars);
+        massGroup.userData.stars = massStars; // Referans olarak sakla
+
         let gs = createMassSphereGeometry(massGeomParams.sphereDetail);
         let ms = new THREE.PointsMaterial({
           size: 0.2, 
@@ -1184,6 +1243,29 @@ if ('serviceWorker' in navigator) {
         const massSettingsSection = document.getElementById('mass-settings-section');
         if (type === 'mass') {
             massSettingsSection.style.display = 'block';
+            
+            // Mass paneli açıldığında, UI elementlerini hafızadaki/kayıtlı değerlerle güncelle
+            document.getElementById('mass-radius').value = massUniforms.radius.value;
+            document.getElementById('mass-radius-display').innerText = massUniforms.radius.value;
+
+            document.getElementById('mass-height').value = massUniforms.planeHeight.value;
+            document.getElementById('mass-height-display').innerText = massUniforms.planeHeight.value;
+
+            document.getElementById('mass-bend').value = massUniforms.bendHeight.value;
+            document.getElementById('mass-bend-display').innerText = massUniforms.bendHeight.value;
+
+            document.getElementById('mass-smooth').value = massUniforms.smoothness.value;
+            document.getElementById('mass-smooth-display').innerText = massUniforms.smoothness.value;
+
+            document.getElementById('mass-planesize').value = massGeomParams.planeSize;
+            document.getElementById('mass-planesize-display').innerText = massGeomParams.planeSize;
+
+            document.getElementById('mass-planeres').value = massGeomParams.planeResolution;
+            document.getElementById('mass-planeres-display').innerText = massGeomParams.planeResolution;
+
+            document.getElementById('mass-spheredetail').value = massGeomParams.sphereDetail;
+            document.getElementById('mass-spheredetail-display').innerText = massGeomParams.sphereDetail;
+
         } else {
             massSettingsSection.style.display = 'none';
         }
@@ -1430,23 +1512,27 @@ if ('serviceWorker' in navigator) {
         }
     });
 
-    // MASS AYARLARI EVENT LISTENERS
+    // MASS AYARLARI EVENT LISTENERS (Save eklendi)
     document.getElementById('mass-radius').addEventListener('input', (e) => {
         massUniforms.radius.value = parseFloat(e.target.value);
         document.getElementById('mass-radius-display').textContent = e.target.value;
         if(massSphere) massSphere.scale.setScalar(massUniforms.radius.value);
+        saveMassSettings();
     });
     document.getElementById('mass-height').addEventListener('input', (e) => {
         massUniforms.planeHeight.value = parseFloat(e.target.value);
         document.getElementById('mass-height-display').textContent = e.target.value;
+        saveMassSettings();
     });
     document.getElementById('mass-bend').addEventListener('input', (e) => {
         massUniforms.bendHeight.value = parseFloat(e.target.value);
         document.getElementById('mass-bend-display').textContent = e.target.value;
+        saveMassSettings();
     });
     document.getElementById('mass-smooth').addEventListener('input', (e) => {
         massUniforms.smoothness.value = parseFloat(e.target.value);
         document.getElementById('mass-smooth-display').textContent = e.target.value;
+        saveMassSettings();
     });
     document.getElementById('mass-planesize').addEventListener('change', (e) => {
         massGeomParams.planeSize = parseFloat(e.target.value);
@@ -1455,6 +1541,7 @@ if ('serviceWorker' in navigator) {
             massPlane.geometry.dispose();
             massPlane.geometry = createMassPlaneGeometry(massGeomParams.planeSize, massGeomParams.planeResolution);
         }
+        saveMassSettings();
     });
     document.getElementById('mass-planeres').addEventListener('change', (e) => {
         massGeomParams.planeResolution = parseFloat(e.target.value);
@@ -1463,6 +1550,7 @@ if ('serviceWorker' in navigator) {
             massPlane.geometry.dispose();
             massPlane.geometry = createMassPlaneGeometry(massGeomParams.planeSize, massGeomParams.planeResolution);
         }
+        saveMassSettings();
     });
     document.getElementById('mass-spheredetail').addEventListener('change', (e) => {
         massGeomParams.sphereDetail = parseFloat(e.target.value);
@@ -1471,6 +1559,7 @@ if ('serviceWorker' in navigator) {
             massSphere.geometry.dispose();
             massSphere.geometry = createMassSphereGeometry(massGeomParams.sphereDetail);
         }
+        saveMassSettings();
     });
     
     // BAŞLANGIÇTA SPHERE
@@ -2064,6 +2153,11 @@ if ('serviceWorker' in navigator) {
         if (currentShape === 'mass' && isMassInit) {
             let t = clock.getElapsedTime() * 0.5;
             
+            // Yıldızları hareket ettir (varsa)
+            if (massGroup.userData.stars) {
+                massGroup.userData.stars.rotation.y = t * 0.05;
+            }
+            
             if (massSphere && massSphere.userData) {
                 let pPrev = massSphere.userData.posPrev;
                 let pNext = massSphere.userData.posNext;
@@ -2358,6 +2452,4 @@ if ('serviceWorker' in navigator) {
     animate();
 </script>
 </body>
-
 </html>
-
