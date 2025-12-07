@@ -51,6 +51,13 @@ if ('serviceWorker' in navigator) {
             display: none !important; 
         }
 
+        /* --- OTO-GİZLEME SINIFI --- */
+        .idle-hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: translateX(-50%) translateY(20px) !important; /* Hafif aşağı kayarak kaybolur */
+        }
+
         #start-button-container {
             position: absolute;
             top: 0;
@@ -70,51 +77,17 @@ if ('serviceWorker' in navigator) {
             height: auto;
             cursor: pointer;
             transition: transform 0.2s ease, filter 0.2s ease; 
-            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.5)); 
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5)); 
         }
 
         #start-button-png:hover {
             transform: scale(1.05);
-            filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.8));
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
         }
         
         #start-button-png:active {
             transform: scale(0.98);
-            filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.3));
-        }
-
-        #color-picker-panel {
-            position: absolute;
-            bottom: 80px; 
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px;
-            width: 113px; 
-            background: linear-gradient(135deg, rgba(20, 20, 20, 0.8), rgba(10, 10, 10, 0.8));
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-radius: 10px;
-            border: 1px solid rgba(0, 210, 255, 0.3); 
-            color: white;
-            z-index: 10;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.7);
-            user-select: none;
-            text-align: center;
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-        }
-        
-        #color-picker-panel.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateX(-50%) translateY(10px);
-        }
-
-        #color-picker-panel label {
-            display: block;
-            font-size: 0.8rem; 
-            margin-bottom: 6px; 
-            color: #00d2ff;
-            font-weight: 600;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
         }
 
         #settings-panel {
@@ -126,21 +99,22 @@ if ('serviceWorker' in navigator) {
             width: 260px;
             max-height: 60vh;
             overflow-y: auto;
-            background: linear-gradient(135deg, rgba(20, 20, 20, 0.85), rgba(10, 10, 10, 0.85));
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            /* ESKİ RENK TEMASI: Siyah/Koyu ve Cyan Border */
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-radius: 10px;
-            border: 1px solid rgba(0, 210, 255, 0.3); 
+            border: 1px solid rgba(0, 255, 255, 0.3); 
             color: white;
             z-index: 10;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
             user-select: none;
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
         #settings-panel::-webkit-scrollbar { width: 5px; }
         #settings-panel::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        #settings-panel::-webkit-scrollbar-thumb { background: rgba(0, 210, 255, 0.3); border-radius: 5px; }
+        #settings-panel::-webkit-scrollbar-thumb { background: rgba(0, 255, 255, 0.3); border-radius: 5px; }
         
         #settings-panel.hidden {
             opacity: 0;
@@ -151,7 +125,7 @@ if ('serviceWorker' in navigator) {
         .setting-group {
             margin-bottom: 12px;
             padding-bottom: 8px;
-            border-bottom: 1px dashed rgba(0, 210, 255, 0.1);
+            border-bottom: 1px dashed rgba(0, 255, 255, 0.2);
         }
 
         .setting-group:last-child {
@@ -166,8 +140,9 @@ if ('serviceWorker' in navigator) {
             align-items: center;
             font-size: 0.8rem; 
             margin-bottom: 4px; 
-            color: #00d2ff;
+            color: #00ffff;
             font-weight: 600;
+            text-shadow: 0 0 2px rgba(0, 255, 255, 0.5);
         }
         
         #settings-panel input[type="range"],
@@ -183,22 +158,23 @@ if ('serviceWorker' in navigator) {
             width: 60px;
             padding: 3px;
             text-align: right;
-            border: 1px solid rgba(0, 210, 255, 0.3);
+            border: 1px solid rgba(0, 255, 255, 0.3);
             border-radius: 4px;
             font-size: 0.75rem;
-            background-color: rgba(0, 0, 0, 0.3);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #00ffff;
         }
         
         .value-display {
             font-size: 0.75rem;
-            color: #fff;
+            color: #ccc;
             font-weight: 400;
         }
 
         #mass-settings-section {
             display: none;
             margin-top: 10px;
-            border-top: 2px solid rgba(0, 210, 255, 0.2);
+            border-top: 2px solid rgba(0, 255, 255, 0.2);
             padding-top: 10px;
         }
 
@@ -209,6 +185,7 @@ if ('serviceWorker' in navigator) {
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 1px;
+            text-shadow: 0 0 5px cyan;
         }
 
         #template-buttons {
@@ -219,13 +196,15 @@ if ('serviceWorker' in navigator) {
             display: flex; 
             gap: 6px; 
             padding: 7px 12px; 
-            background: rgba(10, 10, 10, 0.5);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            /* ESKİ RENK TEMASI */
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             border-radius: 18px; 
-            border: 1px solid rgba(0, 210, 255, 0.2);
+            border: 1px solid rgba(0, 255, 255, 0.3);
             z-index: 10;
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+            transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
         .template-btn {
@@ -235,22 +214,23 @@ if ('serviceWorker' in navigator) {
             padding: 0;
             font-size: 0.5rem; 
             font-weight: 700;
-            color: #fff;
+            color: #ccc;
             cursor: pointer;
             border-radius: 50%;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             overflow: hidden;
             outline: none; 
             user-select: none;
-            background: radial-gradient(circle at 50% 50%, rgba(0, 210, 255, 0.1), rgba(10, 10, 10, 0.2));
+            /* ESKİ RENK TEMASI: Koyu Gri/Siyah Gradient */
+            background: radial-gradient(circle at 50% 50%, #444, #000);
             display: flex;
             align-items: center; 
             justify-content: center;
             text-align: center;
             line-height: 1.1; 
-            text-shadow: 0 0 5px #000;
-            border: 2px solid rgba(0, 210, 255, 0.2);
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 0 2px #000;
+            border: 2px solid #333;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         }
         
         .template-btn.icon-btn {
@@ -260,47 +240,47 @@ if ('serviceWorker' in navigator) {
         .template-btn:active, .template-btn:focus {
             outline: none;
             transform: scale(0.95); 
-            box-shadow: 
-                0 0 5px rgba(0, 0, 0, 0.9), 
-                0 0 10px rgba(0, 210, 255, 0.8), 
-                inset 0 0 10px rgba(0, 255, 255, 0.7);
         }
 
         .template-btn:hover {
             transform: scale(1.1) translateY(-1px);
-            box-shadow: 0 0 20px rgba(0, 210, 255, 0.8), 0 0 5px rgba(0, 0, 0, 0.9);
+            background: #222;
+            box-shadow: 0 0 10px #00ffff;
             border-color: #00ffff;
             color: #fff;
         }
         
+        /* ESKİ RENK TEMASI: Aktif buton Cyan Glow */
         .template-btn.active {
             transform: scale(1.0);
             box-shadow: 
-                0 0 30px rgba(0, 210, 255, 1), 
-                0 0 10px rgba(0, 210, 255, 0.7),
-                inset 0 0 10px rgba(0, 255, 255, 0.7);
+                0 0 15px #00ffff, 
+                inset 0 0 10px #00ffff;
             border-color: #00ffff;
-            background: radial-gradient(circle at 50% 50%, rgba(0, 210, 255, 0.2), rgba(0, 150, 200, 0.2));
-            color: #ccc;
-            text-shadow: 0 0 5px #000;
+            background: #000;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff;
         }
         
         #btn-toggle-camera.active {
             border-color: #00ff88;
             box-shadow: 0 0 30px rgba(0, 255, 136, 1), inset 0 0 10px rgba(0, 255, 136, 0.7);
+            color: #00ff88;
         }
 
         input[type="color"] {
             width: 100%;
-            height: 25px; 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
+            height: 30px; 
+            border: 1px solid rgba(0, 255, 255, 0.3); 
             border-radius: 6px; 
             cursor: pointer;
-            background: transparent;
+            background: rgba(0, 0, 0, 0.5);
             transition: all 0.2s;
+            padding: 2px;
         }
         input[type="color"]:hover {
-            border-color: #00d2ff;
+            border-color: #00ffff;
+            background: rgba(0, 255, 255, 0.1);
         }
         
         #input_video { position: absolute; top: 0; left: 0; width: 0; height: 0; opacity: 0; }
@@ -326,7 +306,6 @@ if ('serviceWorker' in navigator) {
                 font-size: 0.45rem;
             }
 
-            #color-picker-panel,
             #settings-panel {
                 bottom: 110px; 
                 width: 70%;
@@ -345,6 +324,14 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div id="settings-panel" class="initially-hidden hidden">
+        <!-- Renk Ayarı Buraya Taşındı -->
+        <div class="setting-group">
+            <label for="colorPicker">
+                <span>Particle Color</span>
+            </label>
+            <input type="color" id="colorPicker" value="#00d2ff">
+        </div>
+
         <!-- Genel Ayarlar -->
         <div class="setting-group">
             <label for="setting-mouse-sensitivity">
@@ -410,19 +397,10 @@ if ('serviceWorker' in navigator) {
         </div>
     </div>
     
-    <div id="color-picker-panel" class="initially-hidden">
-        <label for="colorPicker">Color</label>
-        <input type="color" id="colorPicker" value="#00d2ff">
-    </div>
-
     <div id="template-buttons" class="initially-hidden">
         
         <button onclick="returnToStartScreen(); playClickSound();" id="btn-exit" class="template-btn icon-btn" title="Başlangıç Ekranına Dön" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
             <i class="fa-solid fa-power-off"></i>
-        </button>
-        
-        <button onclick="toggleColorPanel(); playMenuSound();" id="btn-toggle-color" class="template-btn icon-btn" title="Renk Ayarını Göster/Gizle" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
-            <i class="fas fa-palette"></i>
         </button>
         
         <button onclick="toggleSettingsPanel(); playMenuSound();" id="btn-toggle-settings" class="template-btn icon-btn" title="Simülasyon Ayarlarını Göster/Gizle" onmouseover="playHoverSound()" onmouseleave="stopHoverSound()">
@@ -458,8 +436,8 @@ if ('serviceWorker' in navigator) {
     const menuSound = new Audio('assets/sounds/menu.mp3'); 
     
     hoverSound.volume = 0.5; 
-    clickSound.volume = 0.4;
-    menuSound.volume = 0.2; 
+    clickSound.volume = 0.7;
+    menuSound.volume = 0.5; 
 
     function playHoverSound() {
         hoverSound.currentTime = 0; 
@@ -1223,7 +1201,7 @@ if ('serviceWorker' in navigator) {
     function setShape(type) {
         currentShape = type;
         document.querySelectorAll('#template-buttons .template-btn').forEach(b => {
-            if(b.id !== 'btn-toggle-color' && b.id !== 'btn-exit' && b.id !== 'btn-toggle-camera' && b.id !== 'btn-toggle-settings') { 
+            if(b.id !== 'btn-exit' && b.id !== 'btn-toggle-camera' && b.id !== 'btn-toggle-settings') { 
                 b.classList.remove('active');
             }
         });
@@ -1565,21 +1543,9 @@ if ('serviceWorker' in navigator) {
     // BAŞLANGIÇTA SPHERE
     setShape('sphere');
     
-    function toggleColorPanel() {
-        const panel = document.getElementById('color-picker-panel');
-        panel.classList.toggle('hidden');
-        if (!panel.classList.contains('hidden')) {
-            document.getElementById('settings-panel').classList.add('hidden');
-        }
-    }
-    window.toggleColorPanel = toggleColorPanel;
-
     function toggleSettingsPanel() {
         const panel = document.getElementById('settings-panel');
         panel.classList.toggle('hidden');
-        if (!panel.classList.contains('hidden')) {
-            document.getElementById('color-picker-panel').classList.add('hidden');
-        }
     }
     window.toggleSettingsPanel = toggleSettingsPanel;
     
@@ -1591,7 +1557,6 @@ if ('serviceWorker' in navigator) {
         const startPanel = document.getElementById('start-button-container');
         const startButtonPng = document.getElementById('start-button-png');
         const templateButtons = document.getElementById('template-buttons');
-        const colorPanel = document.getElementById('color-picker-panel');
         const settingsPanel = document.getElementById('settings-panel'); 
         
         startButtonPng.src = 'assets/icons/switchon.png';
@@ -1603,9 +1568,7 @@ if ('serviceWorker' in navigator) {
         setTimeout(() => {
             startPanel.style.display = 'none';
             templateButtons.classList.remove('initially-hidden');
-            colorPanel.classList.remove('initially-hidden');
             settingsPanel.classList.remove('initially-hidden'); 
-            colorPanel.classList.add('hidden'); 
             settingsPanel.classList.add('hidden'); 
         }, 500);
         
@@ -1620,7 +1583,6 @@ if ('serviceWorker' in navigator) {
         const startPanel = document.getElementById('start-button-container');
         const startButtonPng = document.getElementById('start-button-png');
         const templateButtons = document.getElementById('template-buttons');
-        const colorPanel = document.getElementById('color-picker-panel');
         const settingsPanel = document.getElementById('settings-panel'); 
         
         stopCameraControl();
@@ -1630,7 +1592,6 @@ if ('serviceWorker' in navigator) {
         startButtonPng.title = 'Simülasyonu Başlat';
         
         templateButtons.classList.add('initially-hidden');
-        colorPanel.classList.add('initially-hidden');
         settingsPanel.classList.add('initially-hidden'); 
         loadingDiv.classList.add('initially-hidden');
         
@@ -2424,8 +2385,9 @@ if ('serviceWorker' in navigator) {
     // --- YENİ EKLENEN KODLAR ---
     
     // 1. UI elementlerine tıklanınca sahnenin dönmesini/hareket etmesini engellemek için
-    const uiElements = document.querySelectorAll('#settings-panel, #color-picker-panel, #template-buttons');
+    const uiElements = document.querySelectorAll('#settings-panel, #template-buttons');
     uiElements.forEach(el => {
+        // Tıklama, sürükleme ve touch olaylarını durdur, bu sayede panel üzerinde işlem yaparken kamera dönmez
         el.addEventListener('mousedown', (e) => e.stopPropagation());
         el.addEventListener('touchstart', (e) => e.stopPropagation());
         el.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -2441,16 +2403,63 @@ if ('serviceWorker' in navigator) {
         uiOpacityDisplay.textContent = val;
         
         const settingsPanel = document.getElementById('settings-panel');
-        const colorPanel = document.getElementById('color-picker-panel');
         const btnPanel = document.getElementById('template-buttons');
-
-        settingsPanel.style.background = `linear-gradient(135deg, rgba(20, 20, 20, ${val}), rgba(10, 10, 10, ${val}))`;
-        colorPanel.style.background = `linear-gradient(135deg, rgba(20, 20, 20, ${val}), rgba(10, 10, 10, ${val}))`;
-        btnPanel.style.background = `rgba(10, 10, 10, ${val})`; 
+        
+        // Renkler artık koyu siyah tonlarında
+        settingsPanel.style.background = `rgba(10, 10, 10, ${val})`;
+        btnPanel.style.background = `rgba(0, 0, 0, ${val})`; 
     });
     
+    // --- 3. OTOMATİK UI GİZLEME (IDLE TIMER) ---
+    let idleInterval;
+    const idleTimeout = 3000; // 3 saniye
+    
+    // UI'ın gizlenmesini istemediğimiz element ID'leri
+    const autoHideElements = ['template-buttons', 'settings-panel'];
+
+    function resetIdleTimer(e) {
+        // Eğer fare bir UI elementi üzerindeyse, timer'ı sıfırla ama gizleme
+        if (e && e.target) {
+            const targetEl = e.target.closest('#template-buttons, #settings-panel');
+            if (targetEl) {
+                clearTimeout(idleInterval);
+                return; // UI üzerindeyiz, timer kurma
+            }
+        }
+
+        // Tüm elemanlardan gizlilik sınıfını kaldır (Görünür yap)
+        autoHideElements.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.classList.remove('idle-hidden');
+        });
+
+        // Eski timer'ı temizle
+        clearTimeout(idleInterval);
+
+        // Yeni timer kur
+        idleInterval = setTimeout(() => {
+            autoHideElements.forEach(id => {
+                const el = document.getElementById(id);
+                // Sadece açık olanları (hidden sınıfı olmayanları) idle-hidden yapabiliriz
+                // Ama CSS specificity ile zaten hidden olanlar görünmeyeceği için direkt class ekleyebiliriz.
+                // Yine de mantıken sadece açık olanların opacity'si 0 olmalı.
+                if(el && !el.classList.contains('hidden')) {
+                     el.classList.add('idle-hidden');
+                }
+            });
+        }, idleTimeout);
+    }
+
+    // Olay Dinleyicileri
+    window.addEventListener('mousemove', resetIdleTimer);
+    window.addEventListener('mousedown', resetIdleTimer);
+    window.addEventListener('touchstart', resetIdleTimer);
+    window.addEventListener('keydown', resetIdleTimer);
+
+    // Başlangıçta timer'ı başlat
+    resetIdleTimer();
+
     animate();
 </script>
 </body>
 </html>
-
